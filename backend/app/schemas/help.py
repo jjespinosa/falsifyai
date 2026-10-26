@@ -44,7 +44,7 @@ class HelpLink(BaseModel):
 
 
 class HelpResponse(BaseModel):
-    """Static help for milestone M0. It does not reflect the process environment."""
+    """Static help for milestone M1. It does not reflect the process environment."""
 
     model_config = ConfigDict(extra="forbid")
 

@@ -94,6 +94,34 @@ def test_rejects_non_finite_values() -> None:
         )
 
 
+def test_established_status_requires_evidence_bearing_provenance() -> None:
+    with pytest.raises(ValidationError):
+        ScientificClaim(
+            statement="Damping is negligible.",
+            origin="assumed",
+            epistemic_status="established",
+        )
+    claim = ScientificClaim(
+        statement="The measured period on this run was 2.04 seconds.",
+        origin="measured",
+        epistemic_status="established",
+        observable="oscillation period",
+        value=2.04,
+        unit="s",
+    )
+    assert claim.epistemic_status.value == "established"
+
+
+def test_registered_identifier_pattern_rejects_uppercase() -> None:
+    with pytest.raises(ValidationError):
+        ScientificClaim(
+            statement="The registered routine produced this period.",
+            origin="simulated",
+            spec_id="Example_Spec",
+            routine_id="example_routine",
+        )
+
+
 def test_rejects_unknown_origin_and_executable_payload() -> None:
     with pytest.raises(ValidationError):
         ScientificClaim.model_validate(

@@ -1,4 +1,4 @@
-"""In-memory Meta provider double for tests and the M0 shell."""
+"""In-memory Meta provider double for tests and the default stub mode."""
 
 from app.providers.base import ModelCompletion
 

@@ -8,22 +8,40 @@ For each claim identify:
 - variables
 - assumptions
 - provenance
+- epistemic status
 - units if stated
 - missing operational definitions
 
 Do not defend the user's hypothesis.
 
-If a term cannot be connected to a controlled, measured, or defined quantity, mark the claim non-operational.
+claim_id must be lowercase: c1, c2, and so on.
+assumption ids must be lowercase: a1, a2, and so on.
+
+Provenance describes evidence or source origin. Use only:
+measured, literature-derived, assumed, simulated.
+Use origin "measured" only when the user states that a quantity was measured, and include the observable they named.
+Use origin "literature-derived" only when the user states a source, and copy that source into source_ref.
+Use origin "assumed" for a user-proposed claim that was not measured and has no source.
+Use origin "simulated" only when the user names a specification id and a routine id.
+
+Epistemic status describes scientific status. Use only:
+established, hypothesis, speculative, unknown.
+Do not use "established" unless the supplied input supports it with a measurement or a source.
+For an unsupported user-proposed scientific hypothesis, use provenance "assumed" and epistemic status "hypothesis" or "speculative".
+
+Operationality describes measurability and control.
+A speculative status does not imply non-operationality.
+Set is_operational true only when the critical variables and relationships are defined well enough to connect the claim to controlled or measurable quantities.
+If a missing definition is critical to measuring or controlling the claim, set critical to true and is_operational to false.
+An optional clarification may be listed with critical false and does not by itself make the claim non-operational.
 
 Never invent measurements, citations, parameters, or experimental evidence.
+Do not invent evidence or sources.
+Do not add a numeric value or a citation that the user did not write.
 
 Return only the requested structured schema.
 
 Confidence rates the extraction, not the truth of the claim.
-Use origin "measured" only when the user states that a quantity was measured, and include the observable they named.
-Use origin "literature-derived" only when the user states a source, and copy that source into source_ref.
-Use origin "speculative" for a proposed mechanism or effect the user did not measure.
-Do not add a numeric value or a citation that the user did not write.
 """
 
 

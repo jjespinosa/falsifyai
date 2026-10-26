@@ -20,8 +20,22 @@ class LiveModelCallsDisabled(RuntimeError):
     """Raised when a live call is attempted without an attached transport."""
 
 
+REASONING_EFFORTS = frozenset({"minimal", "low", "medium", "high", "xhigh", "max"})
+
+
 class ProviderResponseError(RuntimeError):
     """The live call failed, or the payload did not match the schema."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        http_status: int | None = None,
+        stage: str = "validation",
+    ) -> None:
+        super().__init__(message)
+        self.http_status = http_status
+        self.stage = stage
 
 
 def _is_absolute_https_url(value: str) -> bool:
@@ -69,6 +83,7 @@ class MetaModelProvider:
         user: str,
         response_schema: Mapping[str, Any] | None = None,
         schema_name: str | None = None,
+        reasoning_effort: str | None = None,
     ) -> ModelCompletion:
         """Call chat completions when a transport is attached.
 
@@ -94,9 +109,16 @@ class MetaModelProvider:
                 "type": "json_schema",
                 "json_schema": {
                     "name": schema_name or "StructuredResult",
+                    "strict": True,
                     "schema": dict(response_schema),
                 },
             }
+        if reasoning_effort is not None:
+            if reasoning_effort not in REASONING_EFFORTS:
+                raise ValueError(
+                    "reasoning_effort must be minimal, low, medium, high, xhigh, or max."
+                )
+            body["reasoning_effort"] = reasoning_effort
         key = self._settings.model_api_key.get_secret_value()
         payload = self._transport.post_json(
             url=f"{self.base_url}/chat/completions",

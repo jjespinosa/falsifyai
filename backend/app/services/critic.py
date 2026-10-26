@@ -28,6 +28,7 @@ def critique_hypothesis(
     mode: ExecutionMode,
     settings: Settings,
     transport: ModelTransport | None = None,
+    reasoning_effort: str = "low",
 ) -> CritiqueReport:
     """Review parsed claims. A live failure is returned as a provider error."""
 
@@ -44,6 +45,7 @@ def critique_hypothesis(
             ),
             schema_name="CritiqueReport",
             model=CritiqueReport,
+            reasoning_effort=reasoning_effort,
         )
     else:
         raise ValueError("unsupported execution mode")
@@ -84,10 +86,11 @@ def _generic_critique(parser_result: ParserResult) -> CritiqueReport:
             )
         ]
         clarifications = [
-            item
+            item.statement
             for claim in parser_result.claims
             if not claim.is_operational
             for item in claim.missing_definitions
+            if item.critical
         ]
         summary = (
             "The parsed claims are not experimentally testable until the missing "

@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, Query, Request
 
 from app.providers.meta import (
+    REASONING_EFFORTS,
     ConfigurationError,
     LiveModelCallsDisabled,
     ProviderResponseError,
@@ -52,9 +53,18 @@ def critique_route(
     body: CritiqueInput,
     request: Request,
     mode: ModeQuery = ExecutionMode.STUB,
+    reasoning_effort: Annotated[
+        str,
+        Query(description="Live critic reasoning effort. The M1 canary uses low."),
+    ] = "low",
 ) -> CritiqueReport:
     """Review claims already produced by the parser."""
 
+    if reasoning_effort not in REASONING_EFFORTS:
+        raise HTTPException(
+            status_code=422,
+            detail="reasoning_effort must be minimal, low, medium, high, xhigh, or max.",
+        )
     return _call(
         lambda: critique_hypothesis(
             body.hypothesis,
@@ -62,6 +72,7 @@ def critique_route(
             mode=mode,
             settings=request.app.state.settings,
             transport=request.app.state.live_transport,
+            reasoning_effort=reasoning_effort,
         )
     )
 

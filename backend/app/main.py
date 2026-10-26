@@ -1,4 +1,4 @@
-"""FalsifyAI HTTP shell for milestone M0."""
+"""FalsifyAI HTTP shell for milestone M1."""
 
 from fastapi import FastAPI
 
@@ -52,7 +52,7 @@ def create_app(
         summary="Process health",
     )
     def health() -> HealthResponse:
-        """Report that the M0 shell is running.
+        """Report that the M1 shell is running.
 
         The body names the service and milestone. It does not include configuration.
         """
@@ -66,7 +66,7 @@ def create_app(
         summary="Milestone help",
     )
     def help_route() -> HelpResponse:
-        """Describe the M0 contract.
+        """Describe the M1 contract.
 
         The document is static. It does not read or return environment values.
         """

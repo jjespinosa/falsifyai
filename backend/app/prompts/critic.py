@@ -26,6 +26,7 @@ Identify exactly what prevents the claim from becoming experimentally testable.
 
 Return only the requested structured schema.
 
+A speculative or hypothetical claim can still be operational. Do not treat epistemic status as a substitute for a missing definition.
 Do not invent measurements, citations, or experimental results.
 evidence_basis must explain the objection from the supplied text. It is not a citation.
 Set blocking to true only when severity is blocking.

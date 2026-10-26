@@ -1,27 +1,34 @@
 """A scientific claim labeled by how its content was obtained.
 
-Milestone M0 checks provenance. It does not decide whether a hypothesis survives.
+Provenance is checked here. This schema does not decide whether a hypothesis survives.
 """
 
 from __future__ import annotations
 
 import math
-import re
 from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-_IDENTIFIER = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
+from app.schemas.identifiers import REGISTERED_ID_PATTERN
 
 
 class EvidenceOrigin(str, Enum):
-    """How a claim was obtained. These labels must not be collapsed."""
+    """How the content was obtained. This is not its scientific status."""
 
     MEASURED = "measured"
     LITERATURE_DERIVED = "literature-derived"
     ASSUMED = "assumed"
     SIMULATED = "simulated"
+
+
+class EpistemicStatus(str, Enum):
+    """Scientific standing. This is not provenance and not operationality."""
+
+    ESTABLISHED = "established"
+    HYPOTHESIS = "hypothesis"
     SPECULATIVE = "speculative"
+    UNKNOWN = "unknown"
 
 
 def _strip_text(value: object) -> object:
@@ -41,10 +48,11 @@ class ScientificClaim(BaseModel):
 
     statement: str = Field(min_length=1, max_length=4_000)
     origin: EvidenceOrigin
+    epistemic_status: EpistemicStatus = EpistemicStatus.UNKNOWN
     observable: str | None = Field(default=None, max_length=200)
     source_ref: str | None = Field(default=None, max_length=300)
-    spec_id: str | None = None
-    routine_id: str | None = None
+    spec_id: str | None = Field(default=None, pattern=REGISTERED_ID_PATTERN)
+    routine_id: str | None = Field(default=None, pattern=REGISTERED_ID_PATTERN)
     value: float | None = None
     unit: str | None = Field(default=None, max_length=64)
 
@@ -68,15 +76,6 @@ class ScientificClaim(BaseModel):
             return None
         if value == "":
             raise ValueError("must not be blank")
-        return value
-
-    @field_validator("spec_id", "routine_id")
-    @classmethod
-    def _identifier(cls, value: str | None) -> str | None:
-        if value is None:
-            return None
-        if _IDENTIFIER.fullmatch(value) is None:
-            raise ValueError("must be a lowercase registered identifier")
         return value
 
     @field_validator("value", mode="before")
@@ -106,6 +105,7 @@ class ScientificClaim(BaseModel):
             value=self.value,
             unit=self.unit,
         )
+        enforce_epistemic_status(self.origin, self.epistemic_status)
         return self
 
 
@@ -140,8 +140,17 @@ def enforce_provenance(
         if source_ref is not None:
             raise ValueError("a simulated claim uses spec_id and routine_id, not source_ref")
 
-    if origin is EvidenceOrigin.SPECULATIVE and source_ref is not None:
-        raise ValueError("a speculative claim cannot carry source_ref")
+
+def enforce_epistemic_status(origin: EvidenceOrigin, status: EpistemicStatus) -> None:
+    """Established status requires evidence the caller actually supplied."""
+
+    if status is EpistemicStatus.ESTABLISHED and origin not in {
+        EvidenceOrigin.MEASURED,
+        EvidenceOrigin.LITERATURE_DERIVED,
+    }:
+        raise ValueError(
+            "established status requires measured or literature-derived provenance"
+        )
 
 
 class ClaimProvenance(BaseModel):
@@ -152,8 +161,8 @@ class ClaimProvenance(BaseModel):
     origin: EvidenceOrigin
     observable: str | None = Field(default=None, max_length=200)
     source_ref: str | None = Field(default=None, max_length=300)
-    spec_id: str | None = None
-    routine_id: str | None = None
+    spec_id: str | None = Field(default=None, pattern=REGISTERED_ID_PATTERN)
+    routine_id: str | None = Field(default=None, pattern=REGISTERED_ID_PATTERN)
     value: float | None = None
     unit: str | None = Field(default=None, max_length=64)
 
@@ -169,15 +178,6 @@ class ClaimProvenance(BaseModel):
             return None
         if value == "":
             raise ValueError("must not be blank")
-        return value
-
-    @field_validator("spec_id", "routine_id")
-    @classmethod
-    def _identifier(cls, value: str | None) -> str | None:
-        if value is None:
-            return None
-        if _IDENTIFIER.fullmatch(value) is None:
-            raise ValueError("must be a lowercase registered identifier")
         return value
 
     @field_validator("value", mode="before")

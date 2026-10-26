@@ -4,7 +4,7 @@ The three cases are the golden hypotheses. No fixture adds a number or a
 source that its hypothesis text does not already contain.
 """
 
-from app.schemas.claim import ClaimProvenance, EvidenceOrigin
+from app.schemas.claim import ClaimProvenance, EpistemicStatus, EvidenceOrigin
 from app.schemas.critic import (
     ConventionalExplanation,
     CritiqueIssue,
@@ -19,6 +19,7 @@ from app.schemas.parser import (
     ClaimVariable,
     ExtractedAssumption,
     ExtractionConfidence,
+    MissingDefinition,
     ParsedClaim,
     ParserResult,
     UndefinedTerm,
@@ -58,6 +59,7 @@ def case_a_parser(hypothesis: HypothesisInput) -> ParserResult:
                     value=2.007,
                     unit="s",
                 ),
+                epistemic_status=EpistemicStatus.ESTABLISHED,
                 confidence=ExtractionConfidence.HIGH,
             )
         ],
@@ -92,10 +94,17 @@ def case_b_parser(hypothesis: HypothesisInput) -> ParserResult:
                 ],
                 is_operational=False,
                 missing_definitions=[
-                    "quantum biofield resonance has no stated quantity or unit",
-                    "systemic healing has no stated quantity or unit",
+                    MissingDefinition(
+                        statement="quantum biofield resonance has no stated quantity or unit",
+                        critical=True,
+                    ),
+                    MissingDefinition(
+                        statement="systemic healing has no stated quantity or unit",
+                        critical=True,
+                    ),
                 ],
-                provenance=ClaimProvenance(origin=EvidenceOrigin.SPECULATIVE),
+                provenance=ClaimProvenance(origin=EvidenceOrigin.ASSUMED),
+                epistemic_status=EpistemicStatus.SPECULATIVE,
                 confidence=ExtractionConfidence.LOW,
             )
         ],
@@ -131,10 +140,17 @@ def case_c_parser(hypothesis: HypothesisInput) -> ParserResult:
                 ],
                 is_operational=False,
                 missing_definitions=[
-                    "growth has no stated measure or time window",
-                    "beside this speaker has no stated distance or dose",
+                    MissingDefinition(
+                        statement="growth has no stated measure or time window",
+                        critical=True,
+                    ),
+                    MissingDefinition(
+                        statement="beside this speaker has no stated distance or dose",
+                        critical=True,
+                    ),
                 ],
-                provenance=ClaimProvenance(origin=EvidenceOrigin.SPECULATIVE),
+                provenance=ClaimProvenance(origin=EvidenceOrigin.ASSUMED),
+                epistemic_status=EpistemicStatus.HYPOTHESIS,
                 confidence=ExtractionConfidence.MEDIUM,
             ),
             ParsedClaim(
@@ -143,8 +159,14 @@ def case_c_parser(hypothesis: HypothesisInput) -> ParserResult:
                 claim_type=ClaimType.MECHANISTIC,
                 variables=[ClaimVariable(name="vital energy", defined=False)],
                 is_operational=False,
-                missing_definitions=["vital energy has no stated physical quantity or unit"],
-                provenance=ClaimProvenance(origin=EvidenceOrigin.SPECULATIVE),
+                missing_definitions=[
+                    MissingDefinition(
+                        statement="vital energy has no stated physical quantity or unit",
+                        critical=True,
+                    )
+                ],
+                provenance=ClaimProvenance(origin=EvidenceOrigin.ASSUMED),
+                epistemic_status=EpistemicStatus.SPECULATIVE,
                 confidence=ExtractionConfidence.LOW,
             ),
         ],

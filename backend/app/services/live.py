@@ -21,6 +21,7 @@ def complete_structured(
     user: str,
     schema_name: str,
     model: type[BaseModel],
+    reasoning_effort: str,
 ) -> Any:
     """Call Muse Spark and parse the message with the Pydantic model."""
 
@@ -30,6 +31,7 @@ def complete_structured(
         user=user,
         response_schema=strict_json_schema(model),
         schema_name=schema_name,
+        reasoning_effort=reasoning_effort,
     )
     try:
         payload = json.loads(completion.content)

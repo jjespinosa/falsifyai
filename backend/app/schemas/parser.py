@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-import re
 from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from app.schemas.claim import ClaimProvenance, EvidenceOrigin
-
-_CLAIM_ID = re.compile(r"^c[1-9][0-9]{0,3}$")
-_ASSUMPTION_ID = re.compile(r"^a[1-9][0-9]{0,3}$")
+from app.schemas.claim import ClaimProvenance, EpistemicStatus, enforce_epistemic_status
+from app.schemas.identifiers import AssumptionId, ClaimId
 
 
 class ClaimType(str, Enum):
@@ -61,19 +58,38 @@ class ClaimVariable(BaseModel):
         return value
 
 
+class MissingDefinition(BaseModel):
+    """A gap in how the claim would be measured or controlled.
+
+    Only a critical gap makes the claim non-operational. An optional
+    clarification can remain on an operational claim.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    statement: str = Field(min_length=1, max_length=500)
+    critical: bool
+
+    @field_validator("statement", mode="before")
+    @classmethod
+    def _strip(cls, value: object) -> object:
+        return _strip_text(value)
+
+
 class ParsedClaim(BaseModel):
     """One scientific claim extracted from a hypothesis."""
 
     model_config = ConfigDict(extra="forbid")
 
-    claim_id: str
+    claim_id: ClaimId
     statement: str = Field(min_length=1, max_length=4_000)
     claim_type: ClaimType
     variables: list[ClaimVariable] = Field(default_factory=list, max_length=20)
     assumptions: list[str] = Field(default_factory=list, max_length=20)
     is_operational: bool
-    missing_definitions: list[str] = Field(default_factory=list, max_length=20)
+    missing_definitions: list[MissingDefinition] = Field(default_factory=list, max_length=20)
     provenance: ClaimProvenance
+    epistemic_status: EpistemicStatus
     confidence: ExtractionConfidence
 
     @field_validator("claim_id", "statement", mode="before")
@@ -81,21 +97,14 @@ class ParsedClaim(BaseModel):
     def _strip_identity(cls, value: object) -> object:
         return _strip_text(value)
 
-    @field_validator("claim_id")
-    @classmethod
-    def _claim_id_shape(cls, value: str) -> str:
-        if _CLAIM_ID.fullmatch(value) is None:
-            raise ValueError("claim_id must look like c1")
-        return value
-
-    @field_validator("assumptions", "missing_definitions", mode="before")
+    @field_validator("assumptions", mode="before")
     @classmethod
     def _strip_items(cls, value: object) -> object:
         if not isinstance(value, list):
             return value
         return [item.strip() if isinstance(item, str) else item for item in value]
 
-    @field_validator("assumptions", "missing_definitions")
+    @field_validator("assumptions")
     @classmethod
     def _items_not_blank(cls, value: list[str]) -> list[str]:
         for item in value:
@@ -105,12 +114,11 @@ class ParsedClaim(BaseModel):
 
     @model_validator(mode="after")
     def _operational_means_defined(self) -> ParsedClaim:
+        enforce_epistemic_status(self.provenance.origin, self.epistemic_status)
         if not self.is_operational:
             return self
-        if self.provenance.origin is EvidenceOrigin.SPECULATIVE:
-            raise ValueError("a speculative claim is not operational")
-        if self.missing_definitions:
-            raise ValueError("an operational claim cannot list missing definitions")
+        if any(item.critical for item in self.missing_definitions):
+            raise ValueError("a critical missing definition means the claim is not operational")
         if any(not variable.defined for variable in self.variables):
             raise ValueError("an operational claim cannot include an undefined variable")
         if not self.variables and self.provenance.observable is None:
@@ -123,21 +131,14 @@ class ExtractedAssumption(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    assumption_id: str
+    assumption_id: AssumptionId
     statement: str = Field(min_length=1, max_length=500)
-    claim_ids: list[str] = Field(min_length=1)
+    claim_ids: list[ClaimId] = Field(min_length=1)
 
     @field_validator("assumption_id", "statement", mode="before")
     @classmethod
     def _strip(cls, value: object) -> object:
         return _strip_text(value)
-
-    @field_validator("assumption_id")
-    @classmethod
-    def _assumption_id_shape(cls, value: str) -> str:
-        if _ASSUMPTION_ID.fullmatch(value) is None:
-            raise ValueError("assumption_id must look like a1")
-        return value
 
 
 class UndefinedTerm(BaseModel):
@@ -147,7 +148,7 @@ class UndefinedTerm(BaseModel):
 
     term: str = Field(min_length=1, max_length=200)
     reason: str = Field(min_length=1, max_length=500)
-    claim_ids: list[str] = Field(min_length=1)
+    claim_ids: list[ClaimId] = Field(min_length=1)
 
     @field_validator("term", "reason", mode="before")
     @classmethod

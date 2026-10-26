@@ -116,7 +116,8 @@ def test_default_mode_does_not_call_a_transport() -> None:
     )
 
     assert response.status_code == 200
-    assert response.json()["claims"][0]["provenance"]["origin"] == "speculative"
+    assert response.json()["claims"][0]["provenance"]["origin"] == "assumed"
+    assert response.json()["claims"][0]["epistemic_status"] == "speculative"
 
 
 def test_live_mode_fails_without_a_key_and_does_not_call_out() -> None:
@@ -172,6 +173,8 @@ def test_live_failure_does_not_fall_back_to_the_stub(caplog: pytest.LogCaptureFi
     assert isinstance(body, dict)
     assert body["model"] == "muse-spark-1.3"
     assert body["response_format"]["type"] == "json_schema"
+    assert body["response_format"]["json_schema"]["strict"] is True
+    assert body["reasoning_effort"] == "minimal"
 
 
 def test_live_structured_response_is_parsed_when_the_transport_is_fake() -> None:
@@ -189,6 +192,36 @@ def test_live_structured_response_is_parsed_when_the_transport_is_fake() -> None
     assert response.status_code == 200
     assert response.json()["claims"][0]["is_operational"] is False
     assert _FAKE_KEY not in response.text
+
+
+def test_critic_live_call_defaults_reasoning_effort_to_low() -> None:
+    transport = RecordingTransport(error=ProviderResponseError("live call failed"))
+    client = _client(_live_settings(), transport)
+
+    default = client.post(
+        "/api/v1/analyze/critique?mode=live",
+        json=_critique_body(CASE_B),
+    )
+
+    assert default.status_code == 502
+    assert transport.calls[0]["body"]["reasoning_effort"] == "low"
+    transport.calls.clear()
+
+    refused = client.post(
+        "/api/v1/analyze/critique?mode=live&reasoning_effort=none",
+        json=_critique_body(CASE_B),
+    )
+
+    assert refused.status_code == 422
+    assert transport.calls == []
+
+    sent = client.post(
+        "/api/v1/analyze/critique?mode=live&reasoning_effort=high",
+        json=_critique_body(CASE_B),
+    )
+
+    assert sent.status_code == 502
+    assert transport.calls[0]["body"]["reasoning_effort"] == "high"
 
 
 def test_responses_and_logs_omit_the_key(caplog: pytest.LogCaptureFixture) -> None:

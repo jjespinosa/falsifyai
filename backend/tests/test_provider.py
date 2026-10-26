@@ -115,3 +115,41 @@ def test_application_shell_uses_the_stub() -> None:
     assert isinstance(app.state.provider, StubModelProvider)
     assert completion.stub is True
     assert completion.model_id == "muse-spark-1.3"
+
+
+def test_http_error_keeps_a_schema_message_and_drops_bearer_tokens() -> None:
+    from io import BytesIO
+    from urllib.error import HTTPError
+
+    from app.providers.transport import _read_error_body, _usage
+
+    body = b'{"error":{"message":"schema rejected Bearer super-secret-token"}}'
+    exc = HTTPError(
+        "https://api.meta.ai/v1/chat/completions",
+        400,
+        "Bad Request",
+        hdrs={},
+        fp=BytesIO(body),
+    )
+
+    detail = _read_error_body(exc)
+
+    assert detail == "schema rejected Bearer [redacted]"
+    assert "super-secret-token" not in detail
+    assert _usage(
+        {
+            "prompt_tokens": 3,
+            "completion_tokens": 4,
+            "total_tokens": 7,
+            "completion_tokens_details": {"reasoning_tokens": 2, "reasoning": "hidden"},
+        }
+    ) == {
+        "prompt_tokens": 3,
+        "completion_tokens": 4,
+        "total_tokens": 7,
+        "reasoning_tokens": 2,
+    }
+    assert "hidden" not in str(
+        _usage({"completion_tokens_details": {"reasoning_tokens": 2, "reasoning": "hidden"}})
+    )
+    assert _usage({"prompt_tokens": "3"}) is None

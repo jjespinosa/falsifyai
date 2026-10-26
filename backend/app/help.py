@@ -1,4 +1,4 @@
-"""Static help for milestone M0.
+"""Static help for milestone M1.
 
 This module does not read settings and does not include secret values.
 """
@@ -7,14 +7,14 @@ from app.schemas.help import HelpContract, HelpEndpoint, HelpLink, HelpResponse,
 
 _SUMMARY = (
     "FalsifyAI looks for an experiment that could falsify a hypothesis. "
-    "The parser extracts the smallest set of claims. The critic looks for what "
-    "blocks an experimental test. Both default to stub mode. Live mode is explicit "
-    "and does not fall back to the stub. Later pipeline stages are not implemented."
+    "Milestone M1 extracts the smallest set of claims and then looks for what "
+    "blocks an experimental test. Both routes default to stub mode. Live mode is "
+    "explicit and does not fall back to the stub. Later pipeline stages are not implemented."
 )
 
 
 def help_document() -> HelpResponse:
-    """Return the M0 help document."""
+    """Return the M1 help document."""
 
     return HelpResponse(
         service="falsifyai",
@@ -30,7 +30,7 @@ def help_document() -> HelpResponse:
             HelpEndpoint(
                 method="GET",
                 path="/health",
-                summary="Report that the shell is running. The body does not include configuration.",
+                summary="Report that the M1 shell is running. The body does not include configuration.",
             ),
             HelpEndpoint(
                 method="GET",
@@ -63,7 +63,7 @@ def help_document() -> HelpResponse:
                 name="MODEL_API_KEY",
                 required_for="live Meta Model API calls only",
                 notes=(
-                    "Read from the process environment. The M0 shell starts without it. "
+                    "Read from the process environment. The service starts without it. "
                     "Tests do not send it over the network. Never commit the value."
                 ),
             ),
@@ -95,10 +95,12 @@ def help_document() -> HelpResponse:
             HelpContract(
                 name="ScientificClaim",
                 summary=(
-                    "One claim labeled measured, literature-derived, assumed, simulated, or speculative. "
+                    "One claim with provenance measured, literature-derived, assumed, or simulated, "
+                    "and epistemic status established, hypothesis, speculative, or unknown. "
                     "A measured claim names an observable. A number includes a unit. "
                     "A literature-derived claim names source_ref. A simulated claim names "
-                    "spec_id and routine_id. There is no field for executable code."
+                    "spec_id and routine_id. Speculative status does not decide operationality. "
+                    "There is no field for executable code."
                 ),
             ),
         ],

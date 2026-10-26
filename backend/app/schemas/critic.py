@@ -2,17 +2,13 @@
 
 from __future__ import annotations
 
-import re
 from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.schemas.hypothesis import HypothesisInput
+from app.schemas.identifiers import EXPLANATION_ID_PATTERN, ISSUE_ID_PATTERN, ClaimId
 from app.schemas.parser import ParserResult
-
-_ISSUE_ID = re.compile(r"^i[1-9][0-9]{0,3}$")
-_EXPLANATION_ID = re.compile(r"^e[1-9][0-9]{0,3}$")
-_CLAIM_ID = re.compile(r"^c[1-9][0-9]{0,3}$")
 
 
 class IssueSeverity(str, Enum):
@@ -46,11 +42,11 @@ class CritiqueIssue(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    issue_id: str
+    issue_id: str = Field(pattern=ISSUE_ID_PATTERN)
     severity: IssueSeverity
     category: IssueCategory
     statement: str = Field(min_length=1, max_length=1_000)
-    affected_claim_ids: list[str] = Field(min_length=1)
+    affected_claim_ids: list[ClaimId] = Field(min_length=1)
     evidence_basis: str = Field(min_length=1, max_length=500)
     blocking: bool
 
@@ -58,21 +54,6 @@ class CritiqueIssue(BaseModel):
     @classmethod
     def _strip(cls, value: object) -> object:
         return _strip_text(value)
-
-    @field_validator("issue_id")
-    @classmethod
-    def _issue_id_shape(cls, value: str) -> str:
-        if _ISSUE_ID.fullmatch(value) is None:
-            raise ValueError("issue_id must look like i1")
-        return value
-
-    @field_validator("affected_claim_ids")
-    @classmethod
-    def _claim_id_shape(cls, value: list[str]) -> list[str]:
-        for claim_id in value:
-            if _CLAIM_ID.fullmatch(claim_id) is None:
-                raise ValueError("affected_claim_ids must look like c1")
-        return value
 
     @model_validator(mode="after")
     def _blocking_matches_severity(self) -> CritiqueIssue:
@@ -86,31 +67,15 @@ class ConventionalExplanation(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    explanation_id: str
+    explanation_id: str = Field(pattern=EXPLANATION_ID_PATTERN)
     statement: str = Field(min_length=1, max_length=1_000)
-    affected_claim_ids: list[str] = Field(min_length=1)
+    affected_claim_ids: list[ClaimId] = Field(min_length=1)
     evidence_basis: str = Field(min_length=1, max_length=500)
 
     @field_validator("explanation_id", "statement", "evidence_basis", mode="before")
     @classmethod
     def _strip(cls, value: object) -> object:
         return _strip_text(value)
-
-    @field_validator("explanation_id")
-    @classmethod
-    def _explanation_id_shape(cls, value: str) -> str:
-        if _EXPLANATION_ID.fullmatch(value) is None:
-            raise ValueError("explanation_id must look like e1")
-        return value
-
-    @field_validator("affected_claim_ids")
-    @classmethod
-    def _claim_id_shape(cls, value: list[str]) -> list[str]:
-        for claim_id in value:
-            if _CLAIM_ID.fullmatch(claim_id) is None:
-                raise ValueError("affected_claim_ids must look like c1")
-        return value
-
 
 class CritiqueReport(BaseModel):
     """A skeptical review. It does not award support to the hypothesis."""

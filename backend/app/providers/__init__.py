@@ -1,4 +1,4 @@
-"""Model providers available in milestone M0."""
+"""Model providers for the M1 shell."""
 
 from app.providers.base import ModelCompletion, ModelProvider
 from app.providers.meta import (

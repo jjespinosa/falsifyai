@@ -6,12 +6,13 @@ from app.config import Settings
 from app.prompts.parser import PARSER_SYSTEM_PROMPT, parser_user_prompt
 from app.providers.meta import ProviderResponseError
 from app.providers.transport import ModelTransport
-from app.schemas.claim import ClaimProvenance, EvidenceOrigin
+from app.schemas.claim import ClaimProvenance, EpistemicStatus, EvidenceOrigin
 from app.schemas.hypothesis import HypothesisInput
 from app.schemas.parser import (
     ClaimType,
     ExtractionConfidence,
     ExtractedAssumption,
+    MissingDefinition,
     ParsedClaim,
     ParserResult,
 )
@@ -40,6 +41,7 @@ def parse_hypothesis(
             user=parser_user_prompt(hypothesis.model_dump_json()),
             schema_name="ParserResult",
             model=ParserResult,
+            reasoning_effort="minimal",
         )
     else:
         raise ValueError("unsupported execution mode")
@@ -72,8 +74,14 @@ def _generic_parse(hypothesis: HypothesisInput) -> ParserResult:
                 claim_type=ClaimType.EMPIRICAL,
                 assumptions=list(hypothesis.assumptions),
                 is_operational=False,
-                missing_definitions=["No controlled quantity or unit was stated."],
-                provenance=ClaimProvenance(origin=EvidenceOrigin.SPECULATIVE),
+                missing_definitions=[
+                    MissingDefinition(
+                        statement="No controlled quantity or unit was stated.",
+                        critical=True,
+                    )
+                ],
+                provenance=ClaimProvenance(origin=EvidenceOrigin.ASSUMED),
+                epistemic_status=EpistemicStatus.SPECULATIVE,
                 confidence=ExtractionConfidence.LOW,
             )
         ],
