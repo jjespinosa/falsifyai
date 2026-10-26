@@ -1,4 +1,4 @@
-"""Static help for milestone M1.
+"""Static help for milestone M2.
 
 This module does not read settings and does not include secret values.
 """
@@ -7,20 +7,22 @@ from app.schemas.help import HelpContract, HelpEndpoint, HelpLink, HelpResponse,
 
 _SUMMARY = (
     "FalsifyAI looks for an experiment that could falsify a hypothesis. "
-    "Milestone M1 extracts the smallest set of claims and then looks for what "
-    "blocks an experimental test. Both routes default to stub mode. Live mode is "
-    "explicit and does not fall back to the stub. Later pipeline stages are not implemented."
+    "Milestone M2 extracts claims, critiques them, builds a competing null model, "
+    "and proposes observables that might separate the claim from that model. "
+    "The routes default to stub mode. Live mode is explicit and does not fall back "
+    "to the stub. Simulation, experiment design, and the judge are not implemented."
 )
 
 
 def help_document() -> HelpResponse:
-    """Return the M1 help document."""
+    """Return the M2 help document."""
 
     return HelpResponse(
         service="falsifyai",
-        milestone="M1",
+        milestone="M2",
         summary=_SUMMARY,
         documentation=[
+            HelpLink(kind="guide", location="docs/m2.md"),
             HelpLink(kind="guide", location="docs/m1.md"),
             HelpLink(kind="guide", location="docs/m0.md"),
             HelpLink(kind="openapi", location="/docs"),
@@ -30,7 +32,7 @@ def help_document() -> HelpResponse:
             HelpEndpoint(
                 method="GET",
                 path="/health",
-                summary="Report that the M1 shell is running. The body does not include configuration.",
+                summary="Report that the M2 shell is running. The body does not include configuration.",
             ),
             HelpEndpoint(
                 method="GET",
@@ -56,6 +58,16 @@ def help_document() -> HelpResponse:
                 method="POST",
                 path="/api/v1/analyze/critique",
                 summary="Critique a hypothesis together with a parser result. The default mode is stub.",
+            ),
+            HelpEndpoint(
+                method="POST",
+                path="/api/v1/analyze/null-model",
+                summary="Build a competing null model. The default mode is stub.",
+            ),
+            HelpEndpoint(
+                method="POST",
+                path="/api/v1/analyze/observable",
+                summary="Propose observables that might separate H1 from H0. The default mode is stub.",
             ),
         ],
         configuration=[
@@ -93,6 +105,20 @@ def help_document() -> HelpResponse:
                 ),
             ),
             HelpContract(
+                name="NullModelResult",
+                summary=(
+                    "One or more competing explanations. model_id is lowercase h0. "
+                    "It can say that H0 mimics the claim. It does not issue a verdict."
+                ),
+            ),
+            HelpContract(
+                name="ObservableDesignResult",
+                summary=(
+                    "Candidate measurements. An empty list is valid when definitions are missing. "
+                    "A discriminating flag is not support for the hypothesis and not a verdict."
+                ),
+            ),
+            HelpContract(
                 name="ScientificClaim",
                 summary=(
                     "One claim with provenance measured, literature-derived, assumed, or simulated, "
@@ -105,8 +131,6 @@ def help_document() -> HelpResponse:
             ),
         ],
         not_available=[
-            "Null Model",
-            "Observable Designer",
             "Simulator",
             "Experiment Designer",
             "Falsification Judge",

@@ -44,12 +44,12 @@ class HelpLink(BaseModel):
 
 
 class HelpResponse(BaseModel):
-    """Static help for milestone M1. It does not reflect the process environment."""
+    """Static help for milestone M2. It does not reflect the process environment."""
 
     model_config = ConfigDict(extra="forbid")
 
     service: Literal["falsifyai"]
-    milestone: Literal["M1"]
+    milestone: Literal["M2"]
     summary: str = Field(min_length=1)
     documentation: list[HelpLink]
     endpoints: list[HelpEndpoint]

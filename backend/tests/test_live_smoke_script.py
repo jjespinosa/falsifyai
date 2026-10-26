@@ -137,3 +137,18 @@ def test_missing_env_file_is_reported_without_a_secret(tmp_path: Path) -> None:
     assert "key prefix valid: false" in rendered
     assert "key length: 0" in rendered
     assert ".env file detected: false" in rendered
+
+
+def test_m2_smoke_script_import_does_not_call_the_network(monkeypatch: pytest.MonkeyPatch) -> None:
+    def blocked(*args: object, **kwargs: object) -> None:
+        raise AssertionError("network call during m2 smoke-script import")
+
+    monkeypatch.setattr("urllib.request.urlopen", blocked)
+    path = Path(__file__).resolve().parents[2] / "scripts" / "live_m2_smoke.py"
+    spec = importlib.util.spec_from_file_location("live_m2_smoke_under_test", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    assert module.CASE_MASS.startswith("At fixed pendulum length")
+    assert module.__name__ != "__main__"

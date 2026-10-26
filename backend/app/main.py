@@ -1,4 +1,4 @@
-"""FalsifyAI HTTP shell for milestone M1."""
+"""FalsifyAI HTTP shell for milestone M2."""
 
 from fastapi import FastAPI
 
@@ -28,13 +28,12 @@ def create_app(
     app = FastAPI(
         title="FalsifyAI",
         version=__version__,
-        summary="Adversarial scientific shell. Parser and critic are available.",
+        summary="Adversarial scientific shell through the observable designer.",
         description=(
             "FalsifyAI looks for an experiment that could falsify a hypothesis. "
-            "POST /api/v1/analyze/parse and POST /api/v1/analyze/critique "
-            "default to stub mode and do not call the network. "
-            "Live mode is explicit and does not fall back to the stub. "
-            "See GET /help and docs/m1.md."
+            "Parse, critique, null-model, and observable routes default to stub mode "
+            "and do not call the network. Live mode is explicit and does not fall "
+            "back to the stub. See GET /help and docs/m2.md."
         ),
     )
     app.state.settings = resolved
@@ -52,12 +51,12 @@ def create_app(
         summary="Process health",
     )
     def health() -> HealthResponse:
-        """Report that the M1 shell is running.
+        """Report that the M2 shell is running.
 
         The body names the service and milestone. It does not include configuration.
         """
 
-        return HealthResponse(status="ok", service="falsifyai", milestone="M1")
+        return HealthResponse(status="ok", service="falsifyai", milestone="M2")
 
     @app.get(
         "/help",
@@ -66,7 +65,7 @@ def create_app(
         summary="Milestone help",
     )
     def help_route() -> HelpResponse:
-        """Describe the M1 contract.
+        """Describe the M2 contract.
 
         The document is static. It does not read or return environment values.
         """

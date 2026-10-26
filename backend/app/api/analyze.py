@@ -1,4 +1,4 @@
-"""Parse and critique routes. There is no pipeline orchestration here."""
+"""Analysis routes. There is no pipeline orchestration here."""
 
 from typing import Annotated
 
@@ -12,9 +12,13 @@ from app.providers.meta import (
 )
 from app.schemas.critic import CritiqueInput, CritiqueReport
 from app.schemas.hypothesis import HypothesisInput
+from app.schemas.null_model import NullModelInput, NullModelResult
+from app.schemas.observable import ObservableDesignResult, ObservableInput
 from app.schemas.parser import ParserResult
 from app.services.critic import critique_hypothesis
 from app.services.modes import ExecutionMode
+from app.services.null_model import build_null_model
+from app.services.observable import design_observables
 from app.services.parser import parse_hypothesis
 
 router = APIRouter(prefix="/api/v1/analyze", tags=["analyze"])
@@ -75,6 +79,71 @@ def critique_route(
             reasoning_effort=reasoning_effort,
         )
     )
+
+
+@router.post("/null-model", response_model=NullModelResult, summary="Build a null model")
+def null_model_route(
+    body: NullModelInput,
+    request: Request,
+    mode: ModeQuery = ExecutionMode.STUB,
+    reasoning_effort: Annotated[
+        str,
+        Query(description="Live null-model reasoning effort. The M2 canary uses medium."),
+    ] = "medium",
+) -> NullModelResult:
+    """Construct the strongest reasonable competing explanation."""
+
+    _check_effort(reasoning_effort)
+    return _call(
+        lambda: build_null_model(
+            body.hypothesis,
+            body.parser_result,
+            body.critique_report,
+            mode=mode,
+            settings=request.app.state.settings,
+            transport=request.app.state.live_transport,
+            reasoning_effort=reasoning_effort,
+        )
+    )
+
+
+@router.post(
+    "/observable",
+    response_model=ObservableDesignResult,
+    summary="Design discriminating observables",
+)
+def observable_route(
+    body: ObservableInput,
+    request: Request,
+    mode: ModeQuery = ExecutionMode.STUB,
+    reasoning_effort: Annotated[
+        str,
+        Query(description="Live observable reasoning effort. The M2 canary uses medium."),
+    ] = "medium",
+) -> ObservableDesignResult:
+    """Propose a quantity that might separate H1 from H0."""
+
+    _check_effort(reasoning_effort)
+    return _call(
+        lambda: design_observables(
+            body.hypothesis,
+            body.parser_result,
+            body.critique_report,
+            body.null_model_result,
+            mode=mode,
+            settings=request.app.state.settings,
+            transport=request.app.state.live_transport,
+            reasoning_effort=reasoning_effort,
+        )
+    )
+
+
+def _check_effort(reasoning_effort: str) -> None:
+    if reasoning_effort not in REASONING_EFFORTS:
+        raise HTTPException(
+            status_code=422,
+            detail="reasoning_effort must be minimal, low, medium, high, xhigh, or max.",
+        )
 
 
 def _call(action):
