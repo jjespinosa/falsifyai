@@ -21,6 +21,7 @@ class EvidenceOrigin(str, Enum):
     LITERATURE_DERIVED = "literature-derived"
     ASSUMED = "assumed"
     SIMULATED = "simulated"
+    SPECULATIVE = "speculative"
 
 
 def _strip_text(value: object) -> object:
@@ -96,23 +97,114 @@ class ScientificClaim(BaseModel):
 
     @model_validator(mode="after")
     def _check_provenance(self) -> ScientificClaim:
-        if self.value is not None and self.unit is None:
-            raise ValueError("a numeric value requires a unit")
+        enforce_provenance(
+            origin=self.origin,
+            observable=self.observable,
+            source_ref=self.source_ref,
+            spec_id=self.spec_id,
+            routine_id=self.routine_id,
+            value=self.value,
+            unit=self.unit,
+        )
+        return self
 
-        simulation_ids = self.spec_id is not None or self.routine_id is not None
-        if self.origin is not EvidenceOrigin.SIMULATED and simulation_ids:
-            raise ValueError("only a simulated claim may name spec_id or routine_id")
 
-        if self.origin is EvidenceOrigin.MEASURED and not self.observable:
-            raise ValueError("a measured claim requires an observable")
+def enforce_provenance(
+    *,
+    origin: EvidenceOrigin,
+    observable: str | None,
+    source_ref: str | None,
+    spec_id: str | None,
+    routine_id: str | None,
+    value: float | None,
+    unit: str | None,
+) -> None:
+    """Apply the same provenance rules to every claim shape."""
 
-        if self.origin is EvidenceOrigin.LITERATURE_DERIVED and not self.source_ref:
-            raise ValueError("a literature-derived claim requires source_ref")
+    if value is not None and unit is None:
+        raise ValueError("a numeric value requires a unit")
 
-        if self.origin is EvidenceOrigin.SIMULATED:
-            if self.spec_id is None or self.routine_id is None:
-                raise ValueError("a simulated claim requires spec_id and routine_id")
-            if self.source_ref is not None:
-                raise ValueError("a simulated claim uses spec_id and routine_id, not source_ref")
+    simulation_ids = spec_id is not None or routine_id is not None
+    if origin is not EvidenceOrigin.SIMULATED and simulation_ids:
+        raise ValueError("only a simulated claim may name spec_id or routine_id")
 
+    if origin is EvidenceOrigin.MEASURED and not observable:
+        raise ValueError("a measured claim requires an observable")
+
+    if origin is EvidenceOrigin.LITERATURE_DERIVED and not source_ref:
+        raise ValueError("a literature-derived claim requires source_ref")
+
+    if origin is EvidenceOrigin.SIMULATED:
+        if spec_id is None or routine_id is None:
+            raise ValueError("a simulated claim requires spec_id and routine_id")
+        if source_ref is not None:
+            raise ValueError("a simulated claim uses spec_id and routine_id, not source_ref")
+
+    if origin is EvidenceOrigin.SPECULATIVE and source_ref is not None:
+        raise ValueError("a speculative claim cannot carry source_ref")
+
+
+class ClaimProvenance(BaseModel):
+    """Provenance block for a parsed claim. Rules match ScientificClaim."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    origin: EvidenceOrigin
+    observable: str | None = Field(default=None, max_length=200)
+    source_ref: str | None = Field(default=None, max_length=300)
+    spec_id: str | None = None
+    routine_id: str | None = None
+    value: float | None = None
+    unit: str | None = Field(default=None, max_length=64)
+
+    @field_validator("observable", "source_ref", "unit", "spec_id", "routine_id", mode="before")
+    @classmethod
+    def _strip_text_fields(cls, value: object) -> object:
+        return _strip_text(value)
+
+    @field_validator("observable", "source_ref", "unit")
+    @classmethod
+    def _reject_blank(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if value == "":
+            raise ValueError("must not be blank")
+        return value
+
+    @field_validator("spec_id", "routine_id")
+    @classmethod
+    def _identifier(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if _IDENTIFIER.fullmatch(value) is None:
+            raise ValueError("must be a lowercase registered identifier")
+        return value
+
+    @field_validator("value", mode="before")
+    @classmethod
+    def _numeric_value(cls, value: object) -> object:
+        if value is None or (isinstance(value, (int, float)) and not isinstance(value, bool)):
+            return value
+        raise ValueError("value must be a finite number")
+
+    @field_validator("value")
+    @classmethod
+    def _finite_value(cls, value: float | None) -> float | None:
+        if value is None:
+            return None
+        if not math.isfinite(value):
+            raise ValueError("value must be a finite number")
+        return value
+
+    @model_validator(mode="after")
+    def _check_provenance(self) -> ClaimProvenance:
+        enforce_provenance(
+            origin=self.origin,
+            observable=self.observable,
+            source_ref=self.source_ref,
+            spec_id=self.spec_id,
+            routine_id=self.routine_id,
+            value=self.value,
+            unit=self.unit,
+        )
         return self

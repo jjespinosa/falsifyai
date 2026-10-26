@@ -72,4 +72,8 @@ python -m pytest
 uvicorn app.main:app --app-dir backend --env-file .env --reload
 ```
 
-`GET /health` returns the service name and milestone. It does not call the model and does not expose configuration.
+`GET /health` returns the service name and milestone `M1`. It does not call the model and does not expose configuration.
+
+## Documentation
+
+The operator guide for the shell is [docs/m0.md](docs/m0.md). Parser and critic usage is [docs/m1.md](docs/m1.md). `GET /help` returns the current contract as JSON and does not echo the process environment. `GET /docs` and `GET /redoc` serve the OpenAPI reference.
