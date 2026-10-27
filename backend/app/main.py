@@ -1,4 +1,4 @@
-"""FalsifyAI HTTP shell for milestone M3."""
+"""FalsifyAI HTTP shell for milestone M4."""
 
 from fastapi import FastAPI
 
@@ -29,14 +29,13 @@ def create_app(
     app = FastAPI(
         title="FalsifyAI",
         version=__version__,
-        summary="Adversarial scientific shell through the restricted simulator.",
+        summary="Adversarial scientific shell through the falsification judge.",
         description=(
             "FalsifyAI looks for an experiment that could falsify a hypothesis. "
-            "Parse, critique, null-model, observable, and simulation-plan routes "
-            "default to stub mode and do not call the network. "
+            "Analysis routes default to stub mode and do not call the network. "
             "POST /api/v1/simulate executes a declarative spec locally and does not "
             "call the model. Live mode is explicit and does not fall back to the stub. "
-            "See GET /help and docs/m3.md."
+            "See GET /help and docs/m4.md."
         ),
     )
     app.state.settings = resolved
@@ -54,12 +53,12 @@ def create_app(
         summary="Process health",
     )
     def health() -> HealthResponse:
-        """Report that the M3 shell is running.
+        """Report that the M4 shell is running.
 
         The body names the service and milestone. It does not include configuration.
         """
 
-        return HealthResponse(status="ok", service="falsifyai", milestone="M3")
+        return HealthResponse(status="ok", service="falsifyai", milestone="M4")
 
     @app.get(
         "/help",
@@ -68,7 +67,7 @@ def create_app(
         summary="Milestone help",
     )
     def help_route() -> HelpResponse:
-        """Describe the M3 contract.
+        """Describe the M4 contract.
 
         The document is static. It does not read or return environment values.
         """

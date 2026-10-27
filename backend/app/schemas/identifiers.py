@@ -12,6 +12,10 @@ EXPLANATION_ID_PATTERN = r"^e[1-9][0-9]{0,3}$"
 NULL_MODEL_ID_PATTERN = r"^h0(?:_[a-z0-9_]+)?$"
 OBSERVABLE_ID_PATTERN = r"^o[1-9][0-9]*$"
 SIMULATION_ID_PATTERN = r"^sim[1-9][0-9]*$"
+EXPERIMENT_ID_PATTERN = r"^exp[1-9][0-9]*$"
+EVIDENCE_REF_PATTERN = (
+    r"^(?:c[1-9][0-9]*|h0(?:_[a-z0-9_]+)?|o[1-9][0-9]*|exp[1-9][0-9]*|sim[1-9][0-9]*)$"
+)
 
 ClaimId = Annotated[str, Field(pattern=CLAIM_ID_PATTERN)]
 AssumptionId = Annotated[str, Field(pattern=ASSUMPTION_ID_PATTERN)]

@@ -167,3 +167,18 @@ def test_m3_smoke_script_import_does_not_call_the_network(monkeypatch: pytest.Mo
 
     assert module.CASE_MASS.startswith("At fixed pendulum length")
     assert module.__name__ != "__main__"
+
+
+def test_m4_smoke_script_import_does_not_call_the_network(monkeypatch: pytest.MonkeyPatch) -> None:
+    def blocked(*args: object, **kwargs: object) -> None:
+        raise AssertionError("network call during m4 smoke-script import")
+
+    monkeypatch.setattr("urllib.request.urlopen", blocked)
+    path = Path(__file__).resolve().parents[2] / "scripts" / "live_m4_smoke.py"
+    spec = importlib.util.spec_from_file_location("live_m4_smoke_under_test", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    assert module.CASE_MASS.startswith("At fixed pendulum length")
+    assert module.__name__ != "__main__"

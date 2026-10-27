@@ -1,4 +1,4 @@
-"""Static help for milestone M3.
+"""Static help for milestone M4.
 
 This module does not read settings and does not include secret values.
 """
@@ -7,23 +7,24 @@ from app.schemas.help import HelpContract, HelpEndpoint, HelpLink, HelpResponse,
 
 _SUMMARY = (
     "FalsifyAI looks for an experiment that could falsify a hypothesis. "
-    "Milestone M3 extracts claims, critiques them, builds a competing null model, "
-    "proposes observables, and plans a numerical comparison only when both models "
-    "are quantitative. POST /api/v1/simulate runs a registered family locally and "
-    "does not call the model. Planner routes default to stub mode. Live mode is "
-    "explicit and does not fall back to the stub. Experiment design and the judge "
-    "are not implemented."
+    "Milestone M4 extracts claims, critiques them, builds a competing null model, "
+    "proposes observables, plans a numerical comparison only when both models are "
+    "quantitative, designs a controlled experiment, and assigns one falsification "
+    "status. POST /api/v1/simulate runs a registered family locally and does not "
+    "call the model. Analysis routes default to stub mode. Live mode is explicit "
+    "and does not fall back to the stub."
 )
 
 
 def help_document() -> HelpResponse:
-    """Return the M3 help document."""
+    """Return the M4 help document."""
 
     return HelpResponse(
         service="falsifyai",
-        milestone="M3",
+        milestone="M4",
         summary=_SUMMARY,
         documentation=[
+            HelpLink(kind="guide", location="docs/m4.md"),
             HelpLink(kind="guide", location="docs/m3.md"),
             HelpLink(kind="guide", location="docs/m2.md"),
             HelpLink(kind="guide", location="docs/m1.md"),
@@ -35,7 +36,7 @@ def help_document() -> HelpResponse:
             HelpEndpoint(
                 method="GET",
                 path="/health",
-                summary="Report that the M3 shell is running. The body does not include configuration.",
+                summary="Report that the M4 shell is running. The body does not include configuration.",
             ),
             HelpEndpoint(
                 method="GET",
@@ -81,6 +82,16 @@ def help_document() -> HelpResponse:
                 method="POST",
                 path="/api/v1/simulate",
                 summary="Evaluate a declarative spec locally. This route does not call the model.",
+            ),
+            HelpEndpoint(
+                method="POST",
+                path="/api/v1/analyze/experiment",
+                summary="Design a controlled comparison. The default mode is stub.",
+            ),
+            HelpEndpoint(
+                method="POST",
+                path="/api/v1/analyze/judge",
+                summary="Assign one falsification status. The default mode is stub.",
             ),
         ],
         configuration=[
@@ -145,6 +156,20 @@ def help_document() -> HelpResponse:
                 ),
             ),
             HelpContract(
+                name="ExperimentPlanResult",
+                summary=(
+                    "ready, partial, or blocked. Partial describes a meaningful comparison "
+                    "whose decisive resolution is still undefined."
+                ),
+            ),
+            HelpContract(
+                name="FalsificationVerdict",
+                summary=(
+                    "Exactly one of TESTABLE, BELOW_SENSITIVITY, NON_DISCRIMINATING, "
+                    "or NOT_YET_FALSIFIABLE. It assigns no probability that the hypothesis is true."
+                ),
+            ),
+            HelpContract(
                 name="ScientificClaim",
                 summary=(
                     "One claim with provenance measured, literature-derived, assumed, or simulated, "
@@ -157,8 +182,6 @@ def help_document() -> HelpResponse:
             ),
         ],
         not_available=[
-            "Experiment Designer",
-            "Falsification Judge",
             "frontend",
             "database",
             "DQ-12 demo",

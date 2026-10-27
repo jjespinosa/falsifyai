@@ -15,8 +15,12 @@ from app.schemas.hypothesis import HypothesisInput
 from app.schemas.null_model import NullModelInput, NullModelResult
 from app.schemas.observable import ObservableDesignResult, ObservableInput
 from app.schemas.parser import ParserResult
+from app.schemas.experiment import ExperimentInput, ExperimentPlanResult
 from app.schemas.simulation import SimulationPlanInput, SimulationPlanResult
+from app.schemas.verdict import FalsificationVerdict, JudgeInput
 from app.services.critic import critique_hypothesis
+from app.services.experiment import design_experiment
+from app.services.judge import judge_hypothesis
 from app.services.modes import ExecutionMode
 from app.services.null_model import build_null_model
 from app.services.observable import design_observables
@@ -164,6 +168,72 @@ def simulation_plan_route(
             body.critique_report,
             body.null_model_result,
             body.observable_design,
+            mode=mode,
+            settings=request.app.state.settings,
+            transport=request.app.state.live_transport,
+            reasoning_effort=reasoning_effort,
+        )
+    )
+
+
+@router.post(
+    "/experiment",
+    response_model=ExperimentPlanResult,
+    summary="Design a controlled comparison",
+)
+def experiment_route(
+    body: ExperimentInput,
+    request: Request,
+    mode: ModeQuery = ExecutionMode.STUB,
+    reasoning_effort: Annotated[
+        str,
+        Query(description="Live experiment reasoning effort. The M4 canary uses medium."),
+    ] = "medium",
+) -> ExperimentPlanResult:
+    """Design a comparison. Partial is a meaningful and incomplete design."""
+
+    _check_effort(reasoning_effort)
+    return _call(
+        lambda: design_experiment(
+            body.hypothesis,
+            body.parser_result,
+            body.critique_report,
+            body.null_model_result,
+            body.observable_design,
+            body.simulation_plan,
+            body.simulation_result,
+            mode=mode,
+            settings=request.app.state.settings,
+            transport=request.app.state.live_transport,
+            reasoning_effort=reasoning_effort,
+        )
+    )
+
+
+@router.post("/judge", response_model=FalsificationVerdict, summary="Judge falsifiability")
+def judge_route(
+    body: JudgeInput,
+    request: Request,
+    mode: ModeQuery = ExecutionMode.STUB,
+    reasoning_effort: Annotated[
+        str,
+        Query(description="Live judge reasoning effort. The M4 canary uses medium."),
+    ] = "medium",
+) -> FalsificationVerdict:
+    """Assign one falsification status for the supplied scientific state."""
+
+    _check_effort(reasoning_effort)
+    return _call(
+        lambda: judge_hypothesis(
+            body.hypothesis,
+            body.parser_result,
+            body.critique_report,
+            body.null_model_result,
+            body.observable_design,
+            body.simulation_plan,
+            body.simulation_result,
+            body.experiment_plan,
+            body.capability,
             mode=mode,
             settings=request.app.state.settings,
             transport=request.app.state.live_transport,
