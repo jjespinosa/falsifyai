@@ -10,4 +10,4 @@ class HealthResponse(BaseModel):
 
     status: Literal["ok"]
     service: Literal["falsifyai"]
-    milestone: Literal["M4"]
+    milestone: Literal["M5"]

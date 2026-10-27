@@ -6,7 +6,7 @@ from app.config import load_settings
 from app.main import create_app
 
 
-def test_health_reports_m4() -> None:
+def test_health_reports_m5() -> None:
     client = TestClient(create_app(load_settings({})))
 
     response = client.get("/health")
@@ -15,7 +15,7 @@ def test_health_reports_m4() -> None:
     assert response.json() == {
         "status": "ok",
         "service": "falsifyai",
-        "milestone": "M4",
+        "milestone": "M5",
     }
 
 

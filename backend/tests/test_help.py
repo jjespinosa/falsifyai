@@ -27,7 +27,7 @@ def test_help_describes_the_shell_without_runtime_configuration() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["service"] == "falsifyai"
-    assert body["milestone"] == "M4"
+    assert body["milestone"] == "M5"
     assert "/health" in [item["path"] for item in body["endpoints"]]
     assert "/help" in [item["path"] for item in body["endpoints"]]
     assert "docs/m0.md" in [item["location"] for item in body["documentation"]]
@@ -42,7 +42,7 @@ def test_help_describes_the_shell_without_runtime_configuration() -> None:
 def test_help_document_does_not_read_settings() -> None:
     document = help_document()
 
-    assert document.milestone == "M4"
+    assert document.milestone == "M5"
     rendered = document.model_dump_json()
     assert "MODEL_API_KEY" in rendered
     assert _FAKE_KEY not in rendered

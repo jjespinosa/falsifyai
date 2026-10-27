@@ -1,9 +1,11 @@
-"""FalsifyAI HTTP shell for milestone M4."""
+"""FalsifyAI HTTP shell for milestone M5."""
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
 from app.api.analyze import router as analyze_router
+from app.api.run import router as run_router
 from app.api.simulate import router as simulate_router
 from app.config import Settings, load_settings
 from app.help import help_document
@@ -29,14 +31,21 @@ def create_app(
     app = FastAPI(
         title="FalsifyAI",
         version=__version__,
-        summary="Adversarial scientific shell through the falsification judge.",
+        summary="Adversarial scientific instrument through one falsification run.",
         description=(
             "FalsifyAI looks for an experiment that could falsify a hypothesis. "
-            "Analysis routes default to stub mode and do not call the network. "
+            "POST /api/v1/run executes the verified pipeline once. "
+            "Analysis routes and the run default to stub mode and do not call the network. "
             "POST /api/v1/simulate executes a declarative spec locally and does not "
             "call the model. Live mode is explicit and does not fall back to the stub. "
-            "See GET /help and docs/m4.md."
+            "See GET /help and docs/m5.md."
         ),
+    )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=list(DEV_CORS_ORIGINS),
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type"],
     )
     app.state.settings = resolved
     app.state.live_transport = live_transport
@@ -53,12 +62,12 @@ def create_app(
         summary="Process health",
     )
     def health() -> HealthResponse:
-        """Report that the M4 shell is running.
+        """Report that the M5 shell is running.
 
         The body names the service and milestone. It does not include configuration.
         """
 
-        return HealthResponse(status="ok", service="falsifyai", milestone="M4")
+        return HealthResponse(status="ok", service="falsifyai", milestone="M5")
 
     @app.get(
         "/help",
@@ -67,7 +76,7 @@ def create_app(
         summary="Milestone help",
     )
     def help_route() -> HelpResponse:
-        """Describe the M4 contract.
+        """Describe the M5 contract.
 
         The document is static. It does not read or return environment values.
         """
@@ -76,7 +85,14 @@ def create_app(
 
     app.include_router(analyze_router)
     app.include_router(simulate_router)
+    app.include_router(run_router)
     return app
+
+
+DEV_CORS_ORIGINS = (
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+)
 
 
 app = create_app()

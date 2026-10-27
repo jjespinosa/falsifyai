@@ -1,0 +1,142 @@
+:root {
+  color-scheme: dark;
+  --bg: #101114;
+  --panel: #191c22;
+  --line: #313743;
+  --text: #e8ece9;
+  --muted: #9aa19d;
+  --accent: #d7b07a;
+  --success: #8fb9a8;
+  --blocked: #d7b07a;
+  --failed: #d47b73;
+  --skipped: #6e7672;
+  font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top, #1c221c 0, transparent 28rem),
+    var(--bg);
+  color: var(--text);
+}
+
+button, textarea { font: inherit; color: inherit; }
+
+.app {
+  width: min(1120px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2.5rem 0 4rem;
+}
+
+.masthead h1 {
+  margin: 0;
+  font-weight: 560;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 1.7rem;
+}
+
+.subtitle { margin: 0.4rem 0 0; font-size: 1.25rem; }
+.support { max-width: 40rem; color: var(--muted); }
+
+.composer, .panel, .verdict, .failure {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 1rem 1.1rem;
+  margin-top: 1rem;
+}
+
+label { display: block; font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+
+textarea {
+  width: 100%;
+  min-height: 9rem;
+  margin-top: 0.5rem;
+  padding: 0.8rem;
+  background: #0d0f12;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  resize: vertical;
+}
+
+.actions { display: flex; gap: 0.8rem; align-items: center; margin-top: 0.8rem; }
+
+button.primary {
+  background: var(--accent);
+  color: #1a140c;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.7rem 1.2rem;
+  letter-spacing: 0.08em;
+  font-weight: 650;
+}
+
+button.primary:disabled { opacity: 0.5; }
+
+.examples { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; margin-top: 0.8rem; }
+
+.examples button, .execution label.choice {
+  text-align: left;
+  background: #12151a;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.7rem;
+}
+
+.examples button strong { display: block; }
+.examples button span, .notice { color: var(--muted); font-size: 0.92rem; }
+
+.execution { margin-top: 0.8rem; color: var(--muted); }
+.execution .choices { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.4rem; }
+.execution label.choice { display: flex; gap: 0.4rem; align-items: center; text-transform: none; letter-spacing: 0; }
+
+.pipeline { display: flex; gap: 0.5rem; margin-top: 1rem; }
+.stage {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.55rem;
+  background: #14181d;
+}
+.stage b { display: block; font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; }
+.stage small { color: var(--muted); }
+.stage.success { border-color: var(--success); }
+.stage.blocked { border-color: var(--blocked); background: #241e14; }
+.stage.failed { border-color: var(--failed); background: #2a1716; }
+.stage.skipped, .stage.pending { opacity: 0.72; }
+.stage.running { border-color: var(--accent); }
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+.panel h2, .verdict h2, .failure h2 {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+}
+.verdict { border-color: var(--accent); }
+.verdict .label { font-size: 2rem; letter-spacing: 0.04em; margin: 0; }
+.badge { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 0.1rem 0.5rem; letter-spacing: 0.06em; }
+.badge.partial, .badge.blocked { border-color: var(--blocked); }
+.badge.ready { border-color: var(--success); }
+.mono, .ids { font-family: Consolas, "Cascadia Mono", monospace; }
+.failure { border-color: var(--failed); }
+.chart svg { width: 100%; height: auto; background: #0d0f12; border-radius: 6px; }
+.curve { fill: none; stroke-width: 2; }
+.curve.h0 { stroke: var(--success); }
+.curve.h1 { stroke: var(--accent); }
+.curve.delta { stroke: #9aa3b2; stroke-dasharray: 4 3; }
+.swatch.h0 { color: var(--success); }
+.swatch.h1 { color: var(--accent); }
+.swatch.delta { color: #9aa3b2; }
+figcaption { display: flex; gap: 0.8rem; flex-wrap: wrap; color: var(--muted); font-size: 0.9rem; }
+.footer { color: var(--muted); font-size: 0.88rem; }
+.developer, .trace { margin-top: 0.8rem; }
+pre { overflow: auto; background: #0d0f12; padding: 0.8rem; border-radius: 6px; }
+
+@media (max-width: 800px) {
+  .examples, .grid, .pipeline { grid-template-columns: 1fr; flex-direction: column; }
+}

@@ -1,4 +1,4 @@
-"""Static help for milestone M4.
+"""Static help for milestone M5.
 
 This module does not read settings and does not include secret values.
 """
@@ -7,23 +7,23 @@ from app.schemas.help import HelpContract, HelpEndpoint, HelpLink, HelpResponse,
 
 _SUMMARY = (
     "FalsifyAI looks for an experiment that could falsify a hypothesis. "
-    "Milestone M4 extracts claims, critiques them, builds a competing null model, "
-    "proposes observables, plans a numerical comparison only when both models are "
-    "quantitative, designs a controlled experiment, and assigns one falsification "
-    "status. POST /api/v1/simulate runs a registered family locally and does not "
-    "call the model. Analysis routes default to stub mode. Live mode is explicit "
-    "and does not fall back to the stub."
+    "Milestone M5 runs that verified pipeline once from POST /api/v1/run and "
+    "shows the result in the local frontend. POST /api/v1/simulate runs a "
+    "registered family locally and does not call the model. The run and the "
+    "analysis routes default to stub mode. Live mode is explicit and does not "
+    "fall back to the stub."
 )
 
 
 def help_document() -> HelpResponse:
-    """Return the M4 help document."""
+    """Return the M5 help document."""
 
     return HelpResponse(
         service="falsifyai",
-        milestone="M4",
+        milestone="M5",
         summary=_SUMMARY,
         documentation=[
+            HelpLink(kind="guide", location="docs/m5.md"),
             HelpLink(kind="guide", location="docs/m4.md"),
             HelpLink(kind="guide", location="docs/m3.md"),
             HelpLink(kind="guide", location="docs/m2.md"),
@@ -36,7 +36,7 @@ def help_document() -> HelpResponse:
             HelpEndpoint(
                 method="GET",
                 path="/health",
-                summary="Report that the M4 shell is running. The body does not include configuration.",
+                summary="Report that the M5 shell is running. The body does not include configuration.",
             ),
             HelpEndpoint(
                 method="GET",
@@ -52,6 +52,16 @@ def help_document() -> HelpResponse:
                 method="GET",
                 path="/redoc",
                 summary="Open the ReDoc reference.",
+            ),
+            HelpEndpoint(
+                method="POST",
+                path="/api/v1/run",
+                summary="Run the verified pipeline once. The default mode is stub and the default profile is economy.",
+            ),
+            HelpEndpoint(
+                method="GET",
+                path="/api/v1/examples",
+                summary="Return the three demo hypotheses. The list is fixed.",
             ),
             HelpEndpoint(
                 method="POST",
@@ -122,6 +132,21 @@ def help_document() -> HelpResponse:
         ],
         contracts=[
             HelpContract(
+                name="RunRequest",
+                summary=(
+                    "One HypothesisInput, mode stub or live, and reasoning_profile economy or balanced. "
+                    "Live stays explicit. The public run does not accept a per-stage effort."
+                ),
+            ),
+            HelpContract(
+                name="RunResult",
+                summary=(
+                    "The validated pipeline state, a deterministic summary, and token totals. "
+                    "completed, scientifically_blocked, and failed are distinct. "
+                    "A blocked simulation is not an application crash."
+                ),
+            ),
+            HelpContract(
                 name="HypothesisInput",
                 summary=(
                     "A user hypothesis: statement is required; domain, context, and assumptions "
@@ -182,9 +207,10 @@ def help_document() -> HelpResponse:
             ),
         ],
         not_available=[
-            "frontend",
             "database",
+            "authentication",
             "DQ-12 demo",
             "Duffing demo",
+            "deployment",
         ],
     )

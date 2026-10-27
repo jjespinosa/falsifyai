@@ -1,0 +1,255 @@
+import { useEffect, useState } from "react";
+
+import { loadExamples, runHypothesis } from "./api";
+import { CurveChart } from "./Chart";
+import { statementFor, traceIds, verdictLabel, visualStatus, stageMap, VISUAL_STAGES } from "./presentation";
+import type { ExampleCard, RunResult } from "./types";
+
+export function App() {
+  const [examples, setExamples] = useState<ExampleCard[]>([]);
+  const [statement, setStatement] = useState("");
+  const [notice, setNotice] = useState<string | null>(null);
+  const [mode, setMode] = useState<"stub" | "live">("stub");
+  const [profile, setProfile] = useState<"economy" | "balanced">("economy");
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState<RunResult | null>(null);
+  const [transportError, setTransportError] = useState<string | null>(null);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadExamples()
+      .then(setExamples)
+      .catch(() => setCatalogError("The example catalog could not be loaded."));
+  }, []);
+
+  async function submit() {
+    setRunning(true);
+    setTransportError(null);
+    setResult(null);
+    try {
+      setResult(await runHypothesis(statement, mode, profile));
+    } catch (error) {
+      setTransportError(error instanceof Error ? error.message : "Pipeline execution failed");
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  const stages = stageMap(result, running);
+  const claim = result?.parser?.claims[0];
+  const critique = result?.critique;
+  const nullModel = result?.null_model?.models[0];
+  const observable = result?.observable_design?.observables.find((item) => item.discriminating)
+    ?? result?.observable_design?.observables[0];
+  const plan = result?.experiment?.experiment;
+
+  return (
+    <main className="app">
+      <header className="masthead">
+        <h1>FalsifyAI</h1>
+        <p className="subtitle">Turn a scientific hypothesis into a falsifiable test.</p>
+        <p className="support">
+          FalsifyAI does not ask whether your idea sounds plausible.
+          It asks what experiment could prove it wrong.
+        </p>
+      </header>
+
+      <section className="composer">
+        <label htmlFor="hypothesis">Scientific hypothesis</label>
+        <textarea
+          id="hypothesis"
+          value={statement}
+          placeholder="State one claim you want FalsifyAI to try to falsify..."
+          onChange={(event) => {
+            setStatement(event.target.value);
+            setNotice(null);
+          }}
+        />
+        <div className="examples">
+          {examples.map((item) => (
+            <button
+              key={item.example_id}
+              type="button"
+              onClick={() => {
+                setStatement(statementFor(examples, item.example_id));
+                setNotice(item.notice);
+              }}
+            >
+              <strong>{item.title}</strong>
+              <span>{item.purpose}</span>
+            </button>
+          ))}
+        </div>
+        {catalogError ? <p className="notice">{catalogError}</p> : null}
+        {notice ? <p className="notice">{notice}</p> : null}
+        <div className="actions">
+          <button className="primary" type="button" disabled={running || statement.trim() === ""} onClick={submit}>
+            TRY TO FALSIFY
+          </button>
+        </div>
+        <details className="execution">
+          <summary>Execution</summary>
+          <div className="choices">
+            <label className="choice"><input type="radio" checked={mode === "stub"} onChange={() => setMode("stub")} /> stub</label>
+            <label className="choice"><input type="radio" checked={mode === "live"} onChange={() => setMode("live")} /> live</label>
+            <label className="choice"><input type="radio" checked={profile === "economy"} onChange={() => setProfile("economy")} /> economy</label>
+            <label className="choice"><input type="radio" checked={profile === "balanced"} onChange={() => setProfile("balanced")} /> balanced</label>
+          </div>
+        </details>
+      </section>
+
+      <section className="pipeline" aria-label="Falsification pipeline">
+        {VISUAL_STAGES.map((item, index) => {
+          const status = visualStatus(stages, item.key);
+          return (
+            <article key={item.key} className={`stage ${status}`}>
+              <b>{index + 1}. {item.label}</b>
+              <small>{status}</small>
+            </article>
+          );
+        })}
+      </section>
+
+      {transportError ? (
+        <section className="failure">
+          <h2>Pipeline execution failed</h2>
+          <p>{transportError}</p>
+        </section>
+      ) : null}
+
+      {result?.status === "failed" ? (
+        <section className="failure">
+          <h2>Pipeline execution failed</h2>
+          <p>{result.error ?? "The pipeline stopped on a validation error."}</p>
+        </section>
+      ) : null}
+
+      {result && result.status !== "failed" ? (
+        <>
+          <section className="grid">
+            <article className="panel">
+              <h2>Claim</h2>
+              <p>{claim?.statement}</p>
+              <p>Epistemic status: {claim?.epistemic_status}</p>
+              <p>Operational: {claim?.is_operational ? "yes" : "no"}</p>
+              <ul>
+                {(claim?.missing_definitions ?? []).map((item) => <li key={item.statement}>{item.statement}</li>)}
+              </ul>
+            </article>
+            <article className="panel">
+              <h2>Adversarial critic</h2>
+              <p>Blocking issues: {critique?.blocking_issues.length ?? 0}</p>
+              <p>Major issues: {critique?.major_issues.length ?? 0}</p>
+              <p>Minor issues: {critique?.minor_issues.length ?? 0}</p>
+              <ul>
+                {(critique?.conventional_explanations ?? []).slice(0, 3).map((item) => (
+                  <li key={item.explanation_id}>{item.statement}</li>
+                ))}
+              </ul>
+              <ul>
+                {(critique?.required_clarifications ?? []).map((item) => <li key={item}>{item}</li>)}
+              </ul>
+            </article>
+          </section>
+
+          <article className="panel">
+            <h2>Strongest null model — H₀</h2>
+            <p className="mono">{nullModel?.model_id}</p>
+            <p>{nullModel?.description}</p>
+            <p>Can mimic an apparent H₁ effect: {nullModel?.can_mimic_claim ? "yes" : "no"}</p>
+            <ul>{(nullModel?.known_confounders ?? []).slice(0, 4).map((item) => <li key={item}>{item}</li>)}</ul>
+            {nullModel?.equations[0] ? <p className="mono">{nullModel.equations[0].statement}</p> : null}
+          </article>
+
+          <article className="panel">
+            <h2>Discriminating observable</h2>
+            {observable ? (
+              <>
+                <p><strong>{observable.name}</strong></p>
+                <p>{observable.definition}</p>
+                <p>H₁ prediction: {observable.h1_prediction}</p>
+                <p>H₀ prediction: {observable.h0_prediction}</p>
+                <ul>{observable.required_controls.map((item) => <li key={item}>{item}</li>)}</ul>
+              </>
+            ) : (
+              <>
+                <p>No discriminating observable is currently defined.</p>
+                <p>{result.observable_design?.blocking_issues[0]}</p>
+              </>
+            )}
+          </article>
+
+          <article className="panel">
+            {result.simulation_result ? (
+              <>
+                <h2>Simulation</h2>
+                <CurveChart {...result.simulation_result} />
+              </>
+            ) : (
+              <>
+                <h2>Simulation blocked</h2>
+                <p>{result.simulation_plan?.blocking_missing_definitions[0] ?? result.simulation_plan?.summary}</p>
+              </>
+            )}
+          </article>
+
+          <article className="panel">
+            <h2>Experiment <span className={`badge ${result.experiment?.status ?? ""}`}>{(result.experiment?.status ?? "").toUpperCase()}</span></h2>
+            {plan ? (
+              <>
+                <p>{plan.objective}</p>
+                <p>Independent variable: {plan.independent_variables.map((item) => item.name).join(", ")}</p>
+                <p>Measured variable: {plan.measured_variables.map((item) => item.name).join(", ")}</p>
+                <ul>{plan.controlled_variables.map((item) => <li key={item.name}>{item.name}</li>)}</ul>
+                <p>
+                  {plan.required_resolution.status === "undefined"
+                    ? "Required sensitivity not yet defined."
+                    : `Required resolution: ${plan.required_resolution.value} ${plan.required_resolution.units}`}
+                </p>
+                <p>{plan.falsifier_candidate}</p>
+              </>
+            ) : (
+              <p>{result.experiment?.blocking_missing_definitions[0]}</p>
+            )}
+          </article>
+
+          {result.verdict ? (
+            <article className="verdict">
+              <h2>Falsification status</h2>
+              <p className="label">{verdictLabel(result.verdict.status)}</p>
+              <h2>Why</h2>
+              <p>{result.verdict.primary_reason}</p>
+              {result.verdict.required_next_definition ? (
+                <>
+                  <h2>What is missing</h2>
+                  <p>{result.verdict.required_next_definition}</p>
+                </>
+              ) : null}
+              <h2>What would falsify it</h2>
+              <p>{result.verdict.falsifier}</p>
+            </article>
+          ) : null}
+
+          <details className="trace">
+            <summary>Scientific trace</summary>
+            <p className="ids">{traceIds(result).join("  ")}</p>
+            <pre>{JSON.stringify({ summary: result.summary, evidence_refs: result.verdict?.evidence_refs ?? [] }, null, 2)}</pre>
+          </details>
+          <details className="developer">
+            <summary>Developer</summary>
+            <p>
+              calls {result.usage.model_calls} · prompt {result.usage.prompt_tokens} · completion {result.usage.completion_tokens} · reasoning {result.usage.reasoning_tokens} · total {result.usage.total_tokens} · {result.usage.elapsed_ms} ms
+            </p>
+          </details>
+        </>
+      ) : null}
+
+      <footer className="footer">
+        <p>
+          FalsifyAI separates hypothesis generation from falsification criteria. Model outputs are schema-validated, numerical execution is restricted to registered functions, and no arbitrary model-generated code is executed.
+        </p>
+        <p>Built for Meta Global AI Developer Hackathon 2026.</p>
+      </footer>
+    </main>
+  );
+}
