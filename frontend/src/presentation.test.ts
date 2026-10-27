@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  DUFFING_NOTICE,
+  FRONTIER_ADVERSARIAL,
+  SPECULATIVE_NOTICE,
   VERDICT_LABELS,
+  curveLabels,
+  exampleMatching,
+  formatQuantity,
+  maximumSeparation,
   simulationVisual,
   statementFor,
   verdictLabel,
@@ -12,17 +19,39 @@ import type { ExampleCard, RunResult } from "./types";
 const examples: ExampleCard[] = [
   {
     example_id: "pendulum",
+    category: "FOUNDATIONAL",
     title: "Pendulum",
+    label: "Foundational comparison",
     purpose: "Not yet finite.",
     statement: "At fixed pendulum length and within the small-angle regime, increasing the bob mass changes the oscillation period.",
     notice: null,
   },
   {
     example_id: "synthetic",
+    category: "SYNTHETIC CONTROL",
     title: "Synthetic",
+    label: "Synthetic quantitative claim",
     purpose: "Finite comparison.",
     statement: "Synthetic quantitative check.",
     notice: "Synthetic demonstration — not experimental evidence.",
+  },
+  {
+    example_id: "duffing",
+    category: "SYNTHETIC CONTROL",
+    title: "DUFFING BENCHMARK",
+    label: "Synthetic quantitative control",
+    purpose: "A fully specified model comparison.",
+    statement: "Synthetic Duffing benchmark.",
+    notice: DUFFING_NOTICE,
+  },
+  {
+    example_id: "dq12",
+    category: "FRONTIER STRESS TEST",
+    title: "DQ-12 speculative stress test",
+    label: "Speculative frontier stress test",
+    purpose: "Challenges an under-specified hypothesis.",
+    statement: "DQ-12 toy statement.",
+    notice: SPECULATIVE_NOTICE,
   },
 ];
 
@@ -70,5 +99,24 @@ describe("presentation", () => {
       "simulation",
     )).toBe("blocked");
     expect(run.verdict?.status).toBe("NOT_YET_FALSIFIABLE");
+  });
+
+  it("labels the synthetic control and the speculative stress test", () => {
+    const duffing = exampleMatching(examples, "Synthetic Duffing benchmark.");
+    const frontier = exampleMatching(examples, "DQ-12 toy statement.");
+
+    expect(duffing?.category).toBe("SYNTHETIC CONTROL");
+    expect(duffing?.notice).toBe(DUFFING_NOTICE);
+    expect(curveLabels("duffing")).toEqual({
+      h0: "H0 — harmonic",
+      h1: "H1 — Duffing",
+      caption: DUFFING_NOTICE,
+    });
+    expect(frontier?.category).toBe("FRONTIER STRESS TEST");
+    expect(frontier?.notice).toBe(SPECULATIVE_NOTICE);
+    expect(FRONTIER_ADVERSARIAL).toContain("adversarially");
+    expect(FRONTIER_ADVERSARIAL).not.toContain("confirmed");
+    expect(maximumSeparation([0, -0.075, 0.02])).toBeCloseTo(0.075);
+    expect(formatQuantity(0.01)).toBe("0.01");
   });
 });

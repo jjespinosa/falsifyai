@@ -26,6 +26,6 @@ def run_route(body: RunRequest, request: Request) -> RunResult:
 
 @router.get("/examples", response_model=ExampleList, summary="Demo hypotheses")
 def examples_route() -> ExampleList:
-    """Return the three fixed demos."""
+    """Return the fixed demos."""
 
     return demo_examples()

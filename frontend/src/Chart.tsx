@@ -3,9 +3,20 @@ interface CurveChartProps {
   h0: number[];
   h1: number[];
   delta: number[];
+  h0Label?: string;
+  h1Label?: string;
+  caption?: string;
 }
 
-export function CurveChart({ x, h0, h1, delta }: CurveChartProps) {
+export function CurveChart({
+  x,
+  h0,
+  h1,
+  delta,
+  h0Label = "H₀",
+  h1Label = "H₁",
+  caption = "Model prediction — not experimental data.",
+}: CurveChartProps) {
   const width = 640;
   const height = 280;
   const pad = 32;
@@ -27,10 +38,10 @@ export function CurveChart({ x, h0, h1, delta }: CurveChartProps) {
         <path d={path(delta)} className="curve delta" />
       </svg>
       <figcaption>
-        <span className="swatch h0">H₀</span>
-        <span className="swatch h1">H₁</span>
+        <span className="swatch h0">{h0Label}</span>
+        <span className="swatch h1">{h1Label}</span>
         <span className="swatch delta">delta</span>
-        <span>Model prediction — not experimental data.</span>
+        <span>{caption}</span>
       </figcaption>
     </figure>
   );

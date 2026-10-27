@@ -125,15 +125,17 @@ class ExampleCard(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    example_id: Literal["pendulum", "vague_field", "synthetic"]
+    example_id: Literal["pendulum", "vague_field", "synthetic", "duffing", "dq12"]
+    category: Literal["FOUNDATIONAL", "VAGUE", "SYNTHETIC CONTROL", "FRONTIER STRESS TEST"]
     title: str
+    label: str
     purpose: str
     statement: str
     notice: str | None = None
 
 
 class ExampleList(BaseModel):
-    """The three M5 demos."""
+    """The demo hypotheses."""
 
     model_config = ConfigDict(extra="forbid")
 

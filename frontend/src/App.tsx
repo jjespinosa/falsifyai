@@ -2,7 +2,19 @@ import { useEffect, useState } from "react";
 
 import { loadExamples, runHypothesis } from "./api";
 import { CurveChart } from "./Chart";
-import { statementFor, traceIds, verdictLabel, visualStatus, stageMap, VISUAL_STAGES } from "./presentation";
+import {
+  FRONTIER_ADVERSARIAL,
+  curveLabels,
+  exampleMatching,
+  formatQuantity,
+  maximumSeparation,
+  statementFor,
+  traceIds,
+  verdictLabel,
+  visualStatus,
+  stageMap,
+  VISUAL_STAGES,
+} from "./presentation";
 import type { ExampleCard, RunResult } from "./types";
 
 export function App() {
@@ -42,6 +54,11 @@ export function App() {
   const observable = result?.observable_design?.observables.find((item) => item.discriminating)
     ?? result?.observable_design?.observables[0];
   const plan = result?.experiment?.experiment;
+  const matched = exampleMatching(examples, result?.hypothesis_text ?? statement);
+  const labels = curveLabels(matched?.example_id);
+  const separation = result?.simulation_result ? maximumSeparation(result.simulation_result.delta) : null;
+  const resolution = plan?.required_resolution;
+  const frontier = matched?.category === "FRONTIER STRESS TEST";
 
   return (
     <main className="app">
@@ -75,7 +92,10 @@ export function App() {
                 setNotice(item.notice);
               }}
             >
+              <span className="category">{item.category}</span>
+              {item.category === "FRONTIER STRESS TEST" ? <span className="badge speculative">SPECULATIVE</span> : null}
               <strong>{item.title}</strong>
+              <span>{item.label}</span>
               <span>{item.purpose}</span>
             </button>
           ))}
@@ -178,9 +198,10 @@ export function App() {
           </article>
 
           <article className="panel">
-            <h2>Discriminating observable</h2>
+            <h2>{observable?.discriminating ? "Discriminating observable" : "Observable"}</h2>
             {observable ? (
               <>
+                {observable.discriminating ? null : <p>This candidate does not yet discriminate H1 from H0.</p>}
                 <p><strong>{observable.name}</strong></p>
                 <p>{observable.definition}</p>
                 <p>H₁ prediction: {observable.h1_prediction}</p>
@@ -199,7 +220,18 @@ export function App() {
             {result.simulation_result ? (
               <>
                 <h2>Simulation</h2>
-                <CurveChart {...result.simulation_result} />
+                <CurveChart
+                  {...result.simulation_result}
+                  h0Label={labels.h0}
+                  h1Label={labels.h1}
+                  caption={labels.caption}
+                />
+                <div className="separation">
+                  {separation !== null ? <p>Maximum model separation: {formatQuantity(separation)}</p> : null}
+                  {resolution?.status === "defined" && resolution.value !== null ? (
+                    <p>Specified uncertainty: {formatQuantity(resolution.value)} {resolution.units}</p>
+                  ) : null}
+                </div>
               </>
             ) : (
               <>
@@ -232,14 +264,16 @@ export function App() {
           {result.verdict ? (
             <article className="verdict">
               <h2>Falsification status</h2>
+              {frontier ? <p className="badge speculative">SPECULATIVE</p> : null}
               <p className="label">{verdictLabel(result.verdict.status)}</p>
+              {frontier ? <p>{FRONTIER_ADVERSARIAL}</p> : null}
               <h2>Why</h2>
               <p>{result.verdict.primary_reason}</p>
               {result.verdict.required_next_definition ? (
-                <>
-                  <h2>What is missing</h2>
+                <div className={frontier && result.verdict.status === "NOT_YET_FALSIFIABLE" ? "missing-link" : undefined}>
+                  <h2>{frontier && result.verdict.status === "NOT_YET_FALSIFIABLE" ? "KEY MISSING LINK" : "What is missing"}</h2>
                   <p>{result.verdict.required_next_definition}</p>
-                </>
+                </div>
               ) : null}
               <h2>What would falsify it</h2>
               <p>{result.verdict.falsifier}</p>
@@ -249,7 +283,28 @@ export function App() {
           <details className="trace">
             <summary>Scientific trace</summary>
             <p className="ids">{traceIds(result).join("  ")}</p>
-            <pre>{JSON.stringify({ summary: result.summary, evidence_refs: result.verdict?.evidence_refs ?? [] }, null, 2)}</pre>
+            <pre>{JSON.stringify({
+              claim,
+              h0: nullModel,
+              observable,
+              simulation_decision: {
+                plan_status: result.simulation_plan?.status ?? null,
+                simulation_id: result.simulation_result?.simulation_id ?? result.simulation_plan?.spec?.simulation_id ?? null,
+                families: result.simulation_plan?.spec
+                  ? { h0: result.simulation_plan.spec.h0.family, h1: result.simulation_plan.spec.h1.family }
+                  : null,
+                arrays: result.simulation_result
+                  ? {
+                      x: result.simulation_result.x,
+                      h0: result.simulation_result.h0,
+                      h1: result.simulation_result.h1,
+                      delta: result.simulation_result.delta,
+                    }
+                  : null,
+              },
+              experiment: result.experiment,
+              verdict: result.verdict,
+            }, null, 2)}</pre>
           </details>
           <details className="developer">
             <summary>Developer</summary>

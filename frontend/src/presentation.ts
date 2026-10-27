@@ -61,8 +61,46 @@ export function visualStatus(stages: Record<string, StageStatus>, key: string): 
   return stages[key] ?? "pending";
 }
 
+export const DUFFING_NOTICE = "Synthetic Duffing benchmark — model prediction, not experimental data.";
+export const SPECULATIVE_NOTICE = "Speculative hypothesis — not established physics.";
+export const FRONTIER_ADVERSARIAL =
+  "FalsifyAI is testing this hypothesis adversarially. It is not attempting to validate DQ-12.";
+
 export function statementFor(examples: ExampleCard[], exampleId: string): string {
   return examples.find((item) => item.example_id === exampleId)?.statement ?? "";
+}
+
+export function exampleMatching(examples: ExampleCard[], statement: string): ExampleCard | undefined {
+  return examples.find((item) => item.statement === statement);
+}
+
+export function curveLabels(exampleId: string | undefined): { h0: string; h1: string; caption: string } {
+  if (exampleId === "duffing") {
+    return {
+      h0: "H0 — harmonic",
+      h1: "H1 — Duffing",
+      caption: DUFFING_NOTICE,
+    };
+  }
+  return {
+    h0: "H₀",
+    h1: "H₁",
+    caption: "Model prediction — not experimental data.",
+  };
+}
+
+export function maximumSeparation(delta: number[]): number | null {
+  if (delta.length === 0 || delta.some((value) => !Number.isFinite(value))) {
+    return null;
+  }
+  return Math.max(...delta.map((value) => Math.abs(value)));
+}
+
+export function formatQuantity(value: number): string {
+  if (!Number.isFinite(value)) {
+    return "";
+  }
+  return String(Number(value.toPrecision(6)));
 }
 
 export function traceIds(result: RunResult): string[] {

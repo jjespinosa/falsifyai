@@ -1,4 +1,4 @@
-"""FalsifyAI HTTP shell for milestone M5."""
+"""FalsifyAI HTTP shell for milestone M6."""
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -62,12 +62,12 @@ def create_app(
         summary="Process health",
     )
     def health() -> HealthResponse:
-        """Report that the M5 shell is running.
+        """Report that the M6 shell is running.
 
         The body names the service and milestone. It does not include configuration.
         """
 
-        return HealthResponse(status="ok", service="falsifyai", milestone="M5")
+        return HealthResponse(status="ok", service="falsifyai", milestone="M6")
 
     @app.get(
         "/help",
@@ -76,7 +76,7 @@ def create_app(
         summary="Milestone help",
     )
     def help_route() -> HelpResponse:
-        """Describe the M5 contract.
+        """Describe the M6 contract.
 
         The document is static. It does not read or return environment values.
         """

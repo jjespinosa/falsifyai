@@ -12,8 +12,10 @@ export interface StageRecord {
 }
 
 export interface ExampleCard {
-  example_id: "pendulum" | "vague_field" | "synthetic";
+  example_id: "pendulum" | "vague_field" | "synthetic" | "duffing" | "dq12";
+  category: "FOUNDATIONAL" | "VAGUE" | "SYNTHETIC CONTROL" | "FRONTIER STRESS TEST";
   title: string;
+  label: string;
   purpose: string;
   statement: string;
   notice: string | null;
@@ -65,6 +67,11 @@ export interface RunResult {
     status: string;
     blocking_missing_definitions: string[];
     summary: string;
+    spec: {
+      simulation_id: string;
+      h0: { family: string };
+      h1: { family: string };
+    } | null;
   } | null;
   simulation_result: {
     simulation_id: string;

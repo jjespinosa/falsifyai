@@ -184,6 +184,8 @@ def test_examples_and_stub_run_endpoint_hide_secrets() -> None:
         "pendulum",
         "vague_field",
         "synthetic",
+        "duffing",
+        "dq12",
     ]
     assert body["examples"][2]["notice"] == SYNTHETIC_NOTICE
     assert examples.headers["access-control-allow-origin"] == "http://localhost:5173"

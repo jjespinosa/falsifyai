@@ -10,7 +10,7 @@ The target pipeline is:
 
 Hypothesis → Hypothesis Parser → Adversarial Critic → Null Model → Observable → Simulation → Experiment → Falsification Judge
 
-The implemented milestone is M5: the verified pipeline from parser through falsification judge, one synchronous run, and a local screen that shows the result. Later product work is not implemented.
+The implemented milestone is M6: the verified pipeline from parser through falsification judge, one synchronous run, a local result screen, and two generalization benchmarks. Later product work is not implemented.
 
 ## Scientific rules
 
@@ -21,8 +21,8 @@ The implemented milestone is M5: the verified pipeline from parser through falsi
 5. A hypothesis may legitimately end as `NOT_YET_FALSIFIABLE`.
 6. Do not execute arbitrary model-generated Python.
 7. Simulations use validated declarative specifications and registered numerical routines. The planner returns blocked when H1 has no quantitative law.
-8. DQ-12, when it is added, is only a speculative adversarial stress test. It is not established physics.
-9. A Duffing oscillator comparison, when it is added, is an independent control case.
+8. The DQ-12 stress test is a speculative adversarial case. It is not established physics.
+9. The Duffing comparison is a synthetic quantitative control, not experimental evidence.
 
 Rules 1, 3, 4, and 6 constrain the claim schemas. A measured claim must name an observable. A literature-derived claim must name a source. A simulated claim must name a specification id and a routine id. Established status requires one of those evidence-bearing origins. A speculative status can still be operational when the quantities are defined. There is no field for executable code. The pipeline registers four numerical families, designs an experiment, and the judge may return `NOT_YET_FALSIFIABLE`.
 
@@ -35,9 +35,15 @@ Rules 1, 3, 4, and 6 constrain the claim schemas. A measured claim must name an 
 
 NumPy evaluates the registered families. SciPy, SymPy, and SQLite are intentionally absent.
 
-## Milestone M5
+## Why two benchmarks?
 
-`GET /health` and `GET /help` both report milestone `M5`.
+Duffing demonstrates that FalsifyAI can carry a fully specified quantitative model through simulation and experimental discrimination. The dimensionless weak-nonlinearity curves and the measurement uncertainty are written in the hypothesis, and the restricted simulator evaluates only the registered constant and quadratic families.
+
+DQ-12 demonstrates that the same system will refuse to overclaim when a frontier hypothesis lacks an operational mapping or quantitative prediction. The stress test uses one public toy statement. An unexplained residual is not treated as evidence, and the judge can return `NOT_YET_FALSIFIABLE`.
+
+## Milestone M6
+
+`GET /health` and `GET /help` both report milestone `M6`.
 
 Included:
 
@@ -52,7 +58,7 @@ Included:
 
 Not included:
 
-- database, authentication, DQ-12 demo, Duffing demo, and deployment
+- database, authentication, and deployment
 
 ## Configuration
 
@@ -66,7 +72,7 @@ META_MODEL_ID=muse-spark-1.3
 
 `muse-spark-1.3` is the currently verified primary model. Set `META_MODEL_ID` explicitly. An empty value does not select a model.
 
-`MODEL_API_KEY` is required only for live calls. Tests stay network-free by default: the default provider is `StubModelProvider`, and the pytest suite does not call the Meta Model API. `MetaModelProvider` refuses to initialize when `MODEL_API_KEY` is missing, `META_MODEL_ID` is missing, or `META_BASE_URL` is not an absolute https URL. Live structured output sets `response_format.json_schema.strict` to true. Manual canaries load the repository-root `.env` and do not override variables already set in the process. `python scripts/live_m1_smoke.py` calls the parser and the critic. `python scripts/live_m2_smoke.py` continues through the null model and the observable designer. `python scripts/live_m3_smoke.py` adds the simulation planner and does not call `/simulate` when the plan is blocked. `python scripts/local_m3_engine.py` runs the synthetic numerical fixture and does not call the model. `python scripts/live_m4_smoke.py` continues through the experiment designer and the judge, and it does not call the simulator. `python scripts/local_m4_verdicts.py` runs the four stub verdict classes and does not call the model. `python scripts/live_m5_smoke.py` is the manual live run canary. Pytest does not run these scripts.
+`MODEL_API_KEY` is required only for live calls. Tests stay network-free by default: the default provider is `StubModelProvider`, and the pytest suite does not call the Meta Model API. `MetaModelProvider` refuses to initialize when `MODEL_API_KEY` is missing, `META_MODEL_ID` is missing, or `META_BASE_URL` is not an absolute https URL. Live structured output sets `response_format.json_schema.strict` to true. Manual canaries load the repository-root `.env` and do not override variables already set in the process. `python scripts/live_m1_smoke.py` calls the parser and the critic. `python scripts/live_m2_smoke.py` continues through the null model and the observable designer. `python scripts/live_m3_smoke.py` adds the simulation planner and does not call `/simulate` when the plan is blocked. `python scripts/local_m3_engine.py` runs the synthetic numerical fixture and does not call the model. `python scripts/live_m4_smoke.py` continues through the experiment designer and the judge, and it does not call the simulator. `python scripts/local_m4_verdicts.py` runs the four stub verdict classes and does not call the model. `python scripts/live_m5_smoke.py` is the manual live pendulum canary. `python scripts/live_m6_smoke.py duffing` and `python scripts/live_m6_smoke.py dq12` are the manual M6 canaries. Pytest does not run these scripts.
 
 This package does not load `.env` itself. Pass it to Uvicorn when you want the server process to see it.
 
@@ -87,8 +93,8 @@ npm run dev
 
 `frontend/.env.development` sets `VITE_API_BASE_URL=http://127.0.0.1:8010`. Vite does not start or proxy the API. Do not put a key in a `VITE_` variable. Development CORS allows `http://localhost:5173` and `http://127.0.0.1:5173` only. See [docs/m5.md](docs/m5.md).
 
-`GET /health` returns the service name and milestone `M5`. It does not call the model and does not expose configuration.
+`GET /health` returns the service name and milestone `M6`. It does not call the model and does not expose configuration.
 
 ## Documentation
 
-The operator guide for the shell is [docs/m0.md](docs/m0.md). Parser and critic usage is [docs/m1.md](docs/m1.md). Null-model and observable usage is [docs/m2.md](docs/m2.md). Simulation planning and the local evaluator are [docs/m3.md](docs/m3.md). Experiment design and the judge are [docs/m4.md](docs/m4.md). The run and the local screen are [docs/m5.md](docs/m5.md). `GET /help` returns the current contract as JSON and does not echo the process environment. `GET /docs` and `GET /redoc` serve the OpenAPI reference.
+The operator guide for the shell is [docs/m0.md](docs/m0.md). Parser and critic usage is [docs/m1.md](docs/m1.md). Null-model and observable usage is [docs/m2.md](docs/m2.md). Simulation planning and the local evaluator are [docs/m3.md](docs/m3.md). Experiment design and the judge are [docs/m4.md](docs/m4.md). The run and the local screen are [docs/m5.md](docs/m5.md). The two M6 benchmarks are [docs/m6.md](docs/m6.md). `GET /help` returns the current contract as JSON and does not echo the process environment. `GET /docs` and `GET /redoc` serve the OpenAPI reference.

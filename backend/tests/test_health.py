@@ -15,7 +15,7 @@ def test_health_reports_m5() -> None:
     assert response.json() == {
         "status": "ok",
         "service": "falsifyai",
-        "milestone": "M5",
+        "milestone": "M6",
     }
 
 
