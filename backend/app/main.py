@@ -1,9 +1,10 @@
-"""FalsifyAI HTTP shell for milestone M2."""
+"""FalsifyAI HTTP shell for milestone M3."""
 
 from fastapi import FastAPI
 
 from app import __version__
 from app.api.analyze import router as analyze_router
+from app.api.simulate import router as simulate_router
 from app.config import Settings, load_settings
 from app.help import help_document
 from app.providers.base import ModelProvider
@@ -28,12 +29,14 @@ def create_app(
     app = FastAPI(
         title="FalsifyAI",
         version=__version__,
-        summary="Adversarial scientific shell through the observable designer.",
+        summary="Adversarial scientific shell through the restricted simulator.",
         description=(
             "FalsifyAI looks for an experiment that could falsify a hypothesis. "
-            "Parse, critique, null-model, and observable routes default to stub mode "
-            "and do not call the network. Live mode is explicit and does not fall "
-            "back to the stub. See GET /help and docs/m2.md."
+            "Parse, critique, null-model, observable, and simulation-plan routes "
+            "default to stub mode and do not call the network. "
+            "POST /api/v1/simulate executes a declarative spec locally and does not "
+            "call the model. Live mode is explicit and does not fall back to the stub. "
+            "See GET /help and docs/m3.md."
         ),
     )
     app.state.settings = resolved
@@ -51,12 +54,12 @@ def create_app(
         summary="Process health",
     )
     def health() -> HealthResponse:
-        """Report that the M2 shell is running.
+        """Report that the M3 shell is running.
 
         The body names the service and milestone. It does not include configuration.
         """
 
-        return HealthResponse(status="ok", service="falsifyai", milestone="M2")
+        return HealthResponse(status="ok", service="falsifyai", milestone="M3")
 
     @app.get(
         "/help",
@@ -65,7 +68,7 @@ def create_app(
         summary="Milestone help",
     )
     def help_route() -> HelpResponse:
-        """Describe the M2 contract.
+        """Describe the M3 contract.
 
         The document is static. It does not read or return environment values.
         """
@@ -73,6 +76,7 @@ def create_app(
         return help_document()
 
     app.include_router(analyze_router)
+    app.include_router(simulate_router)
     return app
 
 

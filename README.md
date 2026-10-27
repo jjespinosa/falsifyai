@@ -10,7 +10,7 @@ The target pipeline is:
 
 Hypothesis → Hypothesis Parser → Adversarial Critic → Null Model → Observable → Simulation → Experiment → Falsification Judge
 
-The implemented milestone is M2: the hypothesis parser, the adversarial critic, the null-model builder, and the observable designer. Later stages are not implemented.
+The implemented milestone is M3: the hypothesis parser, the adversarial critic, the null-model builder, the observable designer, the simulation planner, and a restricted numerical simulator. Later stages are not implemented.
 
 ## Scientific rules
 
@@ -20,11 +20,11 @@ The implemented milestone is M2: the hypothesis parser, the adversarial critic, 
 4. Keep provenance distinct from epistemic status and from operationality. Provenance is measured, literature-derived, assumed, or simulated. Epistemic status is established, hypothesis, speculative, or unknown.
 5. A hypothesis may legitimately end as `NOT_YET_FALSIFIABLE`.
 6. Do not execute arbitrary model-generated Python.
-7. Simulations must use validated declarative specifications and registered numerical routines.
+7. Simulations use validated declarative specifications and registered numerical routines. The planner returns blocked when H1 has no quantitative law.
 8. DQ-12, when it is added, is only a speculative adversarial stress test. It is not established physics.
 9. A Duffing oscillator comparison, when it is added, is an independent control case.
 
-Rules 1, 3, 4, 6, and 7 constrain the claim schemas. A measured claim must name an observable. A literature-derived claim must name a source. A simulated claim must name a specification id and a routine id. Established status requires one of those evidence-bearing origins. A speculative status can still be operational when the quantities are defined. There is no field for executable code. This milestone does not register routines, run them, or produce a verdict. `NOT_YET_FALSIFIABLE` is a reserved future outcome of the judge.
+Rules 1, 3, 4, and 6 constrain the claim schemas. A measured claim must name an observable. A literature-derived claim must name a source. A simulated claim must name a specification id and a routine id. Established status requires one of those evidence-bearing origins. A speculative status can still be operational when the quantities are defined. There is no field for executable code. M3 registers four numerical families and runs them from a declarative spec. It does not produce a judge outcome. `NOT_YET_FALSIFIABLE` remains a reserved future outcome of the judge.
 
 ## Stack
 
@@ -32,11 +32,11 @@ Rules 1, 3, 4, 6, and 7 constrain the claim schemas. A measured claim must name 
 - FastAPI, Uvicorn, and Pydantic v2
 - pytest
 
-React, Vite, TypeScript, NumPy, SciPy, SymPy, and SQLite are intentionally absent.
+NumPy evaluates the registered families. React, Vite, TypeScript, SciPy, SymPy, and SQLite are intentionally absent.
 
-## Milestone M2
+## Milestone M3
 
-`GET /health` and `GET /help` both report milestone `M2`.
+`GET /health` and `GET /help` both report milestone `M3`.
 
 Included:
 
@@ -44,12 +44,14 @@ Included:
 - `HypothesisInput` and `ScientificClaim` schemas
 - `POST /api/v1/analyze/parse` and `POST /api/v1/analyze/critique`
 - `POST /api/v1/analyze/null-model` and `POST /api/v1/analyze/observable`
+- `POST /api/v1/analyze/simulation-plan`
+- `POST /api/v1/simulate`, a local registered-family evaluator
 - environment configuration for the Meta Model API
 - a stub provider for tests and an explicit live provider
 
 Not included:
 
-- Simulator, Experiment Designer, and Judge
+- Experiment Designer and Judge
 - frontend, database, DQ-12 demo, and Duffing demo
 
 ## Configuration
@@ -64,7 +66,7 @@ META_MODEL_ID=muse-spark-1.3
 
 `muse-spark-1.3` is the currently verified primary model. Set `META_MODEL_ID` explicitly. An empty value does not select a model.
 
-`MODEL_API_KEY` is required only for live calls. Tests stay network-free by default: the default provider is `StubModelProvider`, and the pytest suite does not call the Meta Model API. `MetaModelProvider` refuses to initialize when `MODEL_API_KEY` is missing, `META_MODEL_ID` is missing, or `META_BASE_URL` is not an absolute https URL. Live structured output sets `response_format.json_schema.strict` to true. Manual canaries load the repository-root `.env` and do not override variables already set in the process. `python scripts/live_m1_smoke.py` calls the parser and the critic. `python scripts/live_m2_smoke.py` continues through the null model and the observable designer. Pytest does not run either script.
+`MODEL_API_KEY` is required only for live calls. Tests stay network-free by default: the default provider is `StubModelProvider`, and the pytest suite does not call the Meta Model API. `MetaModelProvider` refuses to initialize when `MODEL_API_KEY` is missing, `META_MODEL_ID` is missing, or `META_BASE_URL` is not an absolute https URL. Live structured output sets `response_format.json_schema.strict` to true. Manual canaries load the repository-root `.env` and do not override variables already set in the process. `python scripts/live_m1_smoke.py` calls the parser and the critic. `python scripts/live_m2_smoke.py` continues through the null model and the observable designer. `python scripts/live_m3_smoke.py` adds the simulation planner and does not call `/simulate` when the plan is blocked. `python scripts/local_m3_engine.py` runs the synthetic numerical fixture and does not call the model. Pytest does not run these scripts.
 
 This package does not load `.env` itself. Pass it to Uvicorn when you want the server process to see it.
 
@@ -76,8 +78,8 @@ python -m pytest
 uvicorn app.main:app --app-dir backend --env-file .env --reload
 ```
 
-`GET /health` returns the service name and milestone `M2`. It does not call the model and does not expose configuration.
+`GET /health` returns the service name and milestone `M3`. It does not call the model and does not expose configuration.
 
 ## Documentation
 
-The operator guide for the shell is [docs/m0.md](docs/m0.md). Parser and critic usage is [docs/m1.md](docs/m1.md). Null-model and observable usage is [docs/m2.md](docs/m2.md). `GET /help` returns the current contract as JSON and does not echo the process environment. `GET /docs` and `GET /redoc` serve the OpenAPI reference.
+The operator guide for the shell is [docs/m0.md](docs/m0.md). Parser and critic usage is [docs/m1.md](docs/m1.md). Null-model and observable usage is [docs/m2.md](docs/m2.md). Simulation planning and the local evaluator are [docs/m3.md](docs/m3.md). `GET /help` returns the current contract as JSON and does not echo the process environment. `GET /docs` and `GET /redoc` serve the OpenAPI reference.

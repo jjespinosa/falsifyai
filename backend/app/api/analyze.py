@@ -15,11 +15,13 @@ from app.schemas.hypothesis import HypothesisInput
 from app.schemas.null_model import NullModelInput, NullModelResult
 from app.schemas.observable import ObservableDesignResult, ObservableInput
 from app.schemas.parser import ParserResult
+from app.schemas.simulation import SimulationPlanInput, SimulationPlanResult
 from app.services.critic import critique_hypothesis
 from app.services.modes import ExecutionMode
 from app.services.null_model import build_null_model
 from app.services.observable import design_observables
 from app.services.parser import parse_hypothesis
+from app.services.simulation_plan import plan_simulation
 
 router = APIRouter(prefix="/api/v1/analyze", tags=["analyze"])
 
@@ -130,6 +132,38 @@ def observable_route(
             body.parser_result,
             body.critique_report,
             body.null_model_result,
+            mode=mode,
+            settings=request.app.state.settings,
+            transport=request.app.state.live_transport,
+            reasoning_effort=reasoning_effort,
+        )
+    )
+
+
+@router.post(
+    "/simulation-plan",
+    response_model=SimulationPlanResult,
+    summary="Plan a restricted numerical comparison",
+)
+def simulation_plan_route(
+    body: SimulationPlanInput,
+    request: Request,
+    mode: ModeQuery = ExecutionMode.STUB,
+    reasoning_effort: Annotated[
+        str,
+        Query(description="Live planner reasoning effort. The M3 canary uses medium."),
+    ] = "medium",
+) -> SimulationPlanResult:
+    """Decide whether H0 and H1 are quantitative enough to simulate."""
+
+    _check_effort(reasoning_effort)
+    return _call(
+        lambda: plan_simulation(
+            body.hypothesis,
+            body.parser_result,
+            body.critique_report,
+            body.null_model_result,
+            body.observable_design,
             mode=mode,
             settings=request.app.state.settings,
             transport=request.app.state.live_transport,

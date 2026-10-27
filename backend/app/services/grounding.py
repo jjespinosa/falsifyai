@@ -78,6 +78,12 @@ def iter_text(value: object) -> list[str]:
     return found
 
 
+def number_is_stated(value: float, source: str) -> bool:
+    """Return whether a finite number already appears in the supplied text."""
+
+    return _number_is_stated(value, source)
+
+
 def _number_is_stated(value: float, source: str) -> bool:
     tokens = {str(value), f"{value:.12g}"}
     if float(value).is_integer():
