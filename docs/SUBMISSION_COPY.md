@@ -4,29 +4,25 @@ Draft text for the hackathon form. It has not been submitted.
 
 ## A. Tagline
 
-FalsifyAI turns a scientific hypothesis into the observation that could prove it wrong.
+Compile scientific hypotheses into executable falsification tests.
 
 ## B. Short description
 
-FalsifyAI is an adversarial scientific instrument built on Meta Muse Spark 1.3. It does not try to make a hypothesis sound plausible. Structured stages extract the claim, attack its assumptions, build the strongest conventional null, and search for an observable that could separate the two. A restricted local simulator runs only when a quantitative law is already stated. The judge may return TESTABLE, or it may stop at NOT_YET_FALSIFIABLE. A synthetic Duffing control reaches a numerical comparison. A speculative DQ-12 statement is challenged rather than defended.
+FalsifyAI applies adversarial scientific reasoning on Meta Muse Spark 1.3. It builds the strongest null model, searches for a discriminating observable, and runs a restricted simulation only when a quantitative law is already stated. It then writes an experiment and returns a formal falsification status. A fully specified comparison can be TESTABLE. An incomplete hypothesis stops at NOT_YET_FALSIFIABLE instead of receiving an invented equation. Both outcomes come from the same pipeline.
 
 ## C. Longer description
 
-Generative models are fluent at defending an idea. Science advances by stating the observation that would make the idea fail. FalsifyAI puts that question in front of Meta Muse Spark 1.3 and refuses to treat a fluent answer as a result.
+Generative models are fluent at making an idea sound plausible. Science also needs the observation that would make the idea fail. Related adversarial-research workflows already help teams stress-test a hypothesis. FalsifyAI focuses on the transition from that critique to a constrained, executable falsification contract.
 
-One run moves through a fixed pipeline: parse the claim, critique its assumptions, state the strongest null model, propose an observable, simulate only from registered numerical families, design an experiment, and assign one falsification status. There is no probability that the hypothesis is true. Invalid model output fails the stage. Live mode never silently becomes a stub.
+One run parses a typed claim, constructs the strongest null, selects a discriminating observable, and simulates only with registered numerical families. It then writes an experiment and assigns one status. There is no probability that the hypothesis is true. A fully specified synthetic comparison can reach TESTABLE. A speculative statement with no operational mapping blocks simulation and returns NOT_YET_FALSIFIABLE. Same pipeline, different scientific completeness, different justified outcome. The system does not invent the missing law. Invalid structured output fails validation, and the browser never receives the Meta key. The release is one web service.
 
-Two benchmarks show the range. The dimensionless Duffing control states both curves and an uncertainty, so the pipeline can reach TESTABLE with a visible model separation. The DQ-12 stress test is a speculative sentence with no operational map from laboratory quantities to a twelve-dimensional separation. The same pipeline blocks the simulation and returns NOT_YET_FALSIFIABLE. An unexplained residual is not evidence.
+## D. Why Push the Frontier?
 
-The release is one web service. The browser never sees the Meta key. Numerical execution stays inside a closed registry.
+FalsifyAI treats a frontier model as scientific infrastructure rather than an answer generator. The model is asked to compile a hypothesis into a contract that can fail: a null, an observable, a justified numerical comparison, and an experiment. When the quantitative relationship is missing, the system refuses to execute and reports the blocker in public. That refusal is part of the instrument.
 
-## D. Technical summary
+## E. Technical differentiator
 
-FastAPI orchestrates parser, critic, null model, observable, simulation planner, restricted simulator, experiment designer, and judge. Muse Spark 1.3 returns strict JSON. Pydantic accepts or rejects each stage. Economy and balanced profiles stay at or below medium effort, and the parser stays on minimal. The simulator evaluates constant, linear, quadratic, and exponential-decay families. The production image builds the React screen and serves it from the same origin as the API.
-
-## E. Why Push the Frontier?
-
-The frontier risk is not only a wrong equation. It is a fluent system that rewards a speculative idea for sounding complete. FalsifyAI uses a frontier model to do the opposite: carry a fully specified quantitative comparison through to a finite test, and stop, in public, when a frontier hypothesis still has no operational mapping.
+The model never executes arbitrary generated Python. Numerical execution is restricted to registered deterministic families: constant, linear, quadratic, and exponential decay. Invalid structured outputs fail Pydantic validation instead of being silently accepted. Live mode does not fall back to a stub. The client cannot choose the model id.
 
 ## F. Model-use summary
 
@@ -34,4 +30,4 @@ Muse Spark 1.3 performs the structured scientific stages. The parser uses minima
 
 ## G. Safety and scientific integrity
 
-No verdict without an observable. No discrimination without a null model. No simulation without a stated quantitative law. No arbitrary model-generated Python. No file upload, no client-supplied model URL, and no secret in the frontend. The demo owner can set `LIVE_RUNS_ENABLED=false` and the stub examples still run. DQ-12 is labeled speculative. The Duffing chart is labeled as model prediction, not experimental data.
+No discrimination without a null model. No verdict of testability without an observable. No simulation without a stated quantitative law. No arbitrary model-generated Python. No file upload, no client-supplied model URL, and no secret in the frontend. The demo owner can set `LIVE_RUNS_ENABLED=false` and the stub examples still run. DQ-12 is labeled speculative. The Duffing chart is labeled as a model prediction, not experimental evidence.

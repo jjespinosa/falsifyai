@@ -89,10 +89,11 @@ export function App() {
     <main className={demo ? "app demo" : "app"}>
       <header className="masthead">
         <h1>FalsifyAI</h1>
-        <p className="subtitle">Turn a scientific hypothesis into a falsifiable test.</p>
+        <p className="identity">Executable Scientific Falsification Engine</p>
+        <p className="subtitle">Compile a scientific hypothesis into an executable falsification test.</p>
         <p className="support">
           Most AI systems help defend an idea.
-          FalsifyAI asks what observation could prove it wrong.
+          FalsifyAI constructs the strongest competing explanation, searches for a discriminating observable, executes only justified numerical comparisons, and identifies what experiment could prove the hypothesis wrong.
         </p>
         <p className="flow" aria-label="Scientific pipeline">
           <b>Hypothesis</b><span>→</span>
@@ -379,16 +380,16 @@ export function App() {
       <section className="principles">
         <h2>WHY FALSIFYAI?</h2>
         <ul>
-          <li>NO OBSERVABLE, NO CLAIM OF TESTABILITY</li>
-          <li>NO NULL MODEL, NO DISCRIMINATION</li>
-          <li>NO QUANTITATIVE LAW, NO INVENTED SIMULATION</li>
-          <li>NO ARBITRARY MODEL-GENERATED CODE EXECUTION</li>
+          <li><span>NO NULL MODEL</span><span>NO DISCRIMINATION</span></li>
+          <li><span>NO OBSERVABLE</span><span>NO CLAIM OF TESTABILITY</span></li>
+          <li><span>NO QUANTITATIVE LAW</span><span>NO INVENTED SIMULATION</span></li>
+          <li><span>NO ARBITRARY MODEL-GENERATED CODE EXECUTION</span></li>
         </ul>
       </section>
 
       <footer className="footer">
         <p>
-          FalsifyAI separates hypothesis generation from falsification criteria. Model outputs are schema-validated, numerical execution is restricted to registered functions, and no arbitrary model-generated code is executed.
+          FalsifyAI compiles a hypothesis into an executable falsification contract. Model outputs are schema-validated, numerical execution is restricted to registered functions, and no arbitrary model-generated code is executed.
         </p>
         <p>Built for Meta Global AI Developer Hackathon 2026.</p>
       </footer>

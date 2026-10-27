@@ -120,6 +120,7 @@ describe("presentation", () => {
     expect(FRONTIER_ADVERSARIAL).toContain("adversarially");
     expect(FRONTIER_ADVERSARIAL).not.toContain("confirmed");
     expect(DUFFING_NOTICE).toContain("not experimental data");
+    expect(BENCHMARK_NOTE).toContain("not experimental evidence");
     expect(isDemoMode("?demo=1")).toBe(true);
     expect(isDemoMode("")).toBe(false);
     expect(executionLabel("stub")).toBe("Deterministic demo");

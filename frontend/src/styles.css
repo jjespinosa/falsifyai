@@ -39,8 +39,9 @@ button, textarea { font: inherit; color: inherit; }
   font-size: 1.7rem;
 }
 
-.subtitle { margin: 0.45rem 0 0; font-size: 1.45rem; max-width: 36rem; }
-.support { max-width: 38rem; color: var(--muted); font-size: 1.05rem; }
+.identity { margin: 0.4rem 0 0; color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.82rem; }
+.subtitle { margin: 0.45rem 0 0; font-size: 1.35rem; max-width: 40rem; }
+.support { max-width: 46rem; color: var(--muted); font-size: 1.05rem; }
 .flow { display: flex; flex-wrap: wrap; gap: 0.35rem 0.45rem; align-items: center; margin: 1.2rem 0 0; }
 .flow b {
   border: 1px solid var(--line);
@@ -54,7 +55,8 @@ button, textarea { font: inherit; color: inherit; }
 .principles { margin-top: 1.4rem; }
 .principles h2 { margin: 0 0 0.6rem; letter-spacing: 0.08em; font-size: 0.95rem; }
 .principles ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.45rem; }
-.principles li { border-left: 3px solid var(--accent); padding: 0.35rem 0.7rem; letter-spacing: 0.03em; }
+.principles li { display: grid; border-left: 3px solid var(--accent); padding: 0.35rem 0.7rem; letter-spacing: 0.03em; }
+.principles li span + span { color: var(--muted); }
 .mode-flag { display: inline-block; margin-left: 0.6rem; border: 1px solid var(--line); border-radius: 999px; padding: 0.15rem 0.55rem; letter-spacing: 0.08em; font-size: 0.75rem; }
 .mode-flag.live { border-color: var(--success); color: var(--success); }
 .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.6rem; margin-top: 0.8rem; }
@@ -103,7 +105,8 @@ button.primary:disabled { opacity: 0.5; }
 .examples { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.7rem; margin-top: 0.8rem; }
 .category { display: block; margin-bottom: 0.35rem; color: var(--accent); font-size: 0.72rem; letter-spacing: 0.08em; }
 .badge.speculative { border-color: var(--failed); color: var(--failed); margin-right: 0.4rem; }
-.missing-link { border: 1px solid var(--accent); border-radius: 6px; padding: 0.8rem; margin-top: 0.8rem; }
+.missing-link { border: 2px solid var(--accent); background: #241e14; border-radius: 6px; padding: 0.9rem 1rem; margin-top: 0.9rem; }
+.missing-link h2 { color: var(--accent); font-size: 1rem; }
 .separation { display: flex; gap: 1.2rem; flex-wrap: wrap; margin-top: 0.6rem; }
 
 .examples button, .execution label.choice {

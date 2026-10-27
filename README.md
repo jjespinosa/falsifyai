@@ -1,8 +1,12 @@
 # FalsifyAI
 
-FalsifyAI turns scientific hypotheses into adversarial falsification workflows.
+Executable Scientific Falsification Engine.
 
-Generative AI is good at making an idea sound plausible. Science advances by exposing an idea to a test it can fail. Structured Meta-model agents build the claim, the null model H₀, an observable, a simulation when a law is actually stated, an experiment, and one falsification status. The system is allowed to stop and say `NOT_YET_FALSIFIABLE`.
+FalsifyAI compiles scientific hypotheses into structured falsification workflows.
+
+Generative AI is excellent at making ideas sound plausible. Scientific reasoning also requires identifying how an idea can fail.
+
+FalsifyAI is allowed to refuse execution. If the hypothesis lacks the quantitative relationship required for simulation, it returns a scientific blocker instead of inventing one.
 
 ## The problem
 
@@ -10,13 +14,15 @@ A fluent model can defend almost any sentence. A judge still needs to see whethe
 
 ## The idea
 
-FalsifyAI does not argue for the user's hypothesis. It asks what observation could prove the hypothesis wrong, and it refuses to invent the missing science.
+FalsifyAI does not stop at suggesting how a hypothesis might fail. It attempts to compile the hypothesis into an executable falsification contract: a typed claim, an adversarial critique, a strong null model, a discriminating observable, a restricted numerical comparison only when the law is stated, an experiment, and one falsification status.
 
 ## 30-second example
 
-Select **DUFFING CONTROL**. The hypothesis already states `Omega(A) = 1`, `Omega(A) = 1 + 0.075 * A^2`, the domain `0 <= A <= 1`, and uncertainty `0.01`. The run compares the curves and can return `TESTABLE`.
+Same pipeline. Different scientific completeness. Different justified outcome.
 
-Select the **DQ-12** stress test. The same pipeline finds no operational map from laboratory quantities to a twelve-dimensional separation, blocks the simulation, and can return `NOT_YET_FALSIFIABLE`.
+Select **DUFFING CONTROL**. The hypothesis already states `Omega(A) = 1`, `Omega(A) = 1 + 0.075 * A^2`, the domain `0 <= A <= 1`, and uncertainty `0.01`. The quantitative law is present, so the restricted simulator runs, the experiment is ready, and the run can return `TESTABLE`. The chart is a model prediction, not experimental evidence.
+
+Select the **DQ-12** stress test. The same pipeline finds no operational map from laboratory quantities to a twelve-dimensional separation, refuses to invent that law, blocks the simulation, and can return `NOT_YET_FALSIFIABLE`. That outcome is not evidence for extra dimensions.
 
 ## Scientific pipeline
 
@@ -32,7 +38,17 @@ A synthetic dimensionless oscillator. H₀ is the harmonic frequency. H₁ is th
 
 ### DQ-12 speculative stress test
 
-One public toy statement. FalsifyAI tries to falsify it. Ordinary decoherence and apparatus effects are the null. The twelve-dimensional separation is not replaced by ordinary distance. An unexplained residual is not evidence. The conservative result is `NOT_YET_FALSIFIABLE`.
+One public toy statement. FalsifyAI tries to falsify it. Ordinary decoherence and apparatus effects are the null. The twelve-dimensional separation is not replaced by ordinary distance. An unexplained residual is not evidence. The conservative result is `NOT_YET_FALSIFIABLE`. It is not experimental support for the hypothesis.
+
+## Related work
+
+Adversarial hypothesis testing is emerging as an AI-assisted scientific workflow.
+
+[FALSIFY by Kalaris Labs](https://github.com/KalarisLabs/Falsify) is an earlier related project, published before this hackathon. Its public materials focus on adversarial research pre-mortems: hypothesis decomposition, assumptions, confounders, falsification tests, and research-passport style outputs. This note does not audit capabilities beyond that public description.
+
+FalsifyAI addresses the same broad category from an executable-systems perspective. The demonstrated pipeline continues from adversarial analysis into typed null models, discriminating observables, restricted numerical execution when the hypothesis is sufficiently specified, experiment plans, and formal falsification-status outcomes.
+
+FalsifyAI does not claim to be the first AI system to apply adversarial reasoning to scientific hypotheses. The demonstrated distinction is the attempt to compile that analysis into a constrained, executable falsification contract. Detail is in [docs/RELATED_WORK.md](docs/RELATED_WORK.md).
 
 ## Architecture
 

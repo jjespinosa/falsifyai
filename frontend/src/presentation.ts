@@ -62,7 +62,7 @@ export function visualStatus(stages: Record<string, StageStatus>, key: string): 
 }
 
 export const DUFFING_NOTICE = "Synthetic Duffing benchmark — model prediction, not experimental data.";
-export const BENCHMARK_NOTE = "Synthetic benchmark — model predictions, not experimental data.";
+export const BENCHMARK_NOTE = "Model prediction — not experimental evidence.";
 export const SPECULATIVE_NOTICE = "Speculative hypothesis — not established physics.";
 export const FRONTIER_ADVERSARIAL =
   "FalsifyAI is testing DQ-12 adversarially. It is not attempting to validate it.";

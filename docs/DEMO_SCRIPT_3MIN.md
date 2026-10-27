@@ -6,28 +6,42 @@ Record against the public URL. Use `?demo=1` if you want the developer token pan
 
 If the run is stub, the screen says **Deterministic demo**. If the run calls Muse Spark, the screen says **LIVE**. Do not present a stub run as a live model call.
 
+Related projects stay in the README. They are not part of this recording.
+
 ## 0:00–0:20 — Problem
 
-Show the title and the pipeline strip.
+Show the title, the line **Executable Scientific Falsification Engine**, and the pipeline strip.
 
-> AI is very good at helping us explain why an idea might be right. Science also needs the opposite question: what would prove it wrong?
+> Generative AI is very good at helping us explain why an idea might be right.
+>
+> But science also requires the opposite question:
+>
+> What observation would prove it wrong?
 
 ## 0:20–0:45 — Product
 
 Select a hypothesis. Leave the pipeline visible.
 
-> FalsifyAI extracts the claim, attacks its assumptions, builds the strongest reasonable null model, searches for a discriminating observable, and only simulates when the equations actually exist.
+> FalsifyAI compiles a hypothesis into an executable falsification workflow.
+>
+> It extracts the claim, attacks its assumptions, builds the strongest reasonable null model, searches for a discriminating observable, and only simulates when the equations actually exist.
+>
+> The difficult part isn't generating criticism. It's knowing when criticism is operational enough to execute.
 
 ## 0:45–1:25 — Duffing benchmark
 
-Select **DUFFING CONTROL**. Run it. Show H₀, H₁, the chart, separation 0.075, uncertainty 0.01, and **TESTABLE**.
+Select **DUFFING CONTROL**. Run it. Show H₀, H₁, the chart, separation 0.075, uncertainty 0.01, delta/sigma, and **TESTABLE**.
 
-> This is a synthetic control, not experimental evidence.
+> Execution is justified. The quantitative law is in the hypothesis.
+>
+> This is a synthetic control. Model prediction — not experimental evidence.
 
 ## 1:25–2:15 — DQ-12 stress test
 
-Select the DQ-12 card. Show the ordinary-decoherence null, the missing operational mapping, the blocked simulation, and **NOT YET FALSIFIABLE**.
+Select the DQ-12 card. Show **SPECULATIVE HYPOTHESIS**, the ordinary-decoherence null, the **KEY MISSING LINK**, the blocked simulation, and **NOT YET FALSIFIABLE**.
 
+> Execution is refused. The operational mapping is missing, and the system does not invent it.
+>
 > The system is not rewarded for supporting the theory. It is rewarded for finding what the theory still needs before it can fail.
 
 ## 2:15–2:40 — Architecture
