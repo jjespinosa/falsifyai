@@ -32,10 +32,12 @@ class ProviderResponseError(RuntimeError):
         *,
         http_status: int | None = None,
         stage: str = "validation",
+        diagnostic: Any | None = None,
     ) -> None:
         super().__init__(message)
         self.http_status = http_status
         self.stage = stage
+        self.diagnostic = diagnostic
 
 
 def _is_absolute_https_url(value: str) -> bool:

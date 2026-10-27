@@ -35,7 +35,14 @@ def _strip_text(value: object) -> object:
 
 
 class ClaimVariable(BaseModel):
-    """A quantity named by a claim."""
+    """A quantity named by a claim.
+
+    ``defined`` means the physical or mathematical quantity is sufficiently
+    identified to know what it represents and, in principle, how it could be
+    measured, controlled, or computed. It does not mean a numerical value,
+    range, tolerance, instrument precision, or effect size was supplied.
+    Missing quantitative information stays on ``missing_definitions``.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
@@ -114,6 +121,11 @@ class ParsedClaim(BaseModel):
 
     @model_validator(mode="after")
     def _operational_means_defined(self) -> ParsedClaim:
+        """Keep is_operational false when a variable is genuinely undefined.
+
+        A missing number, range, or tolerance does not flip ``defined``.
+        """
+
         enforce_epistemic_status(self.provenance.origin, self.epistemic_status)
         if not self.is_operational:
             return self

@@ -30,6 +30,7 @@ StageName = Literal[
 StageStatus = Literal["pending", "running", "success", "blocked", "failed", "skipped"]
 RunOutcome = Literal["completed", "scientifically_blocked", "failed"]
 ReasoningProfileName = Literal["economy", "balanced"]
+FailureKind = Literal["schema_validation", "json_decode", "system"]
 
 
 class RunRequest(BaseModel):
@@ -85,6 +86,17 @@ class UsageSummary(BaseModel):
     elapsed_ms: int = 0
 
 
+class FailureDiagnostic(BaseModel):
+    """Safe development detail for a stopped run. It carries no raw model body."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    stage: StageName
+    failure_kind: FailureKind
+    safe_message: str
+    validation_paths: list[str] = Field(default_factory=list)
+
+
 class RunResult(BaseModel):
     """The full validated state a judge can read without a raw-JSON-only screen."""
 
@@ -105,6 +117,7 @@ class RunResult(BaseModel):
     summary: RunSummary | None = None
     usage: UsageSummary
     error: str | None = None
+    failure: FailureDiagnostic | None = None
 
 
 class ExampleCard(BaseModel):

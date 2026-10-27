@@ -11,10 +11,12 @@ from app.diagnostics.parser_response import (
     completion_facts,
     content_profile,
     describe_validation_error,
+    parser_contract_audit,
     redact,
     render_validation_diagnostic,
     semantic_rules,
     validator_index,
+    write_parser_failure,
     write_structured_response,
 )
 from app.schemas.parser import ParserResult
@@ -47,8 +49,9 @@ def test_validation_diagnostic_reports_path_type_and_hides_the_value() -> None:
     assert "validation_error_count:" in rendered
     assert any(row["field"] == "claim_id" and "pattern" in row["type"] for row in rows)
     assert any(row["path"] == "claims.0.provenance" for row in rows)
+    assert any(row["value"] == "C1" for row in rows)
     assert any("measured claim requires an observable" in row["message"] for row in rows)
-    assert all(row["value_type"] for row in rows)
+    assert all(row["value_type"] and row["value"] for row in rows)
     assert _SECRET not in rendered
 
 
@@ -122,7 +125,12 @@ def test_saved_response_and_facts_do_not_keep_a_secret(tmp_path: Path) -> None:
         {
             "model": "muse-spark-1.3",
             "choices": [{"finish_reason": "stop"}],
-            "usage": {"prompt_tokens": 3, "completion_tokens": 4, "total_tokens": 7},
+            "usage": {
+                "prompt_tokens": 3,
+                "completion_tokens": 4,
+                "total_tokens": 7,
+                "completion_tokens_details": {"reasoning_tokens": 2},
+            },
         },
         http_status=200,
     )
@@ -130,8 +138,130 @@ def test_saved_response_and_facts_do_not_keep_a_secret(tmp_path: Path) -> None:
     assert facts["http_status"] == 200
     assert facts["finish_reason"] == "stop"
     assert facts["model"] == "muse-spark-1.3"
+    assert facts["reasoning_tokens"] == 2
     assert facts["total_tokens"] == 7
     assert _SECRET not in rendered
+
+
+def test_live_pendulum_parser_payload_keeps_the_operational_variable_rule() -> None:
+    """The captured Muse payload is operational while every named quantity is undefined."""
+
+    from app.prompts.parser import PARSER_SYSTEM_PROMPT
+
+    payload = {
+        "assumptions": [],
+        "claims": [
+            {
+                "assumptions": [],
+                "claim_id": "c1",
+                "claim_type": "causal",
+                "confidence": "high",
+                "epistemic_status": "hypothesis",
+                "is_operational": True,
+                "missing_definitions": [
+                    {
+                        "critical": False,
+                        "statement": "Threshold defining 'small-angle regime' (e.g., maximum angular amplitude) is not specified.",
+                    }
+                ],
+                "provenance": {
+                    "observable": None,
+                    "origin": "assumed",
+                    "routine_id": None,
+                    "source_ref": None,
+                    "spec_id": None,
+                    "unit": None,
+                    "value": None,
+                },
+                "statement": "At fixed pendulum length and within the small-angle regime, increasing the bob mass changes the oscillation period.",
+                "variables": [
+                    {"defined": False, "name": "bob mass", "unit": None},
+                    {"defined": False, "name": "oscillation period", "unit": None},
+                    {"defined": False, "name": "pendulum length", "unit": None},
+                ],
+            }
+        ],
+        "parser_notes": [],
+        "undefined_terms": [],
+    }
+    with pytest.raises(ValidationError) as captured:
+        ParserResult.model_validate(payload)
+
+    rows = describe_validation_error(captured.value)
+    assert len(rows) == 1
+    assert rows[0]["path"] == "claims.0"
+    assert rows[0]["type"] == "value_error"
+    assert rows[0]["message"] == "Value error, an operational claim cannot include an undefined variable"
+    assert "defined=true does not require that quantitative specification." in PARSER_SYSTEM_PROMPT
+    assert "Do not encode missing numerical information by setting defined=false." in PARSER_SYSTEM_PROMPT
+    assert "If any variable has defined set to false, set is_operational to false." in PARSER_SYSTEM_PROMPT
+
+
+def test_parser_contract_audit_keeps_post_schema_rules() -> None:
+    audit = parser_contract_audit()
+
+    assert audit["claim_id_pattern_sent"] is True
+    assert audit["assumption_id_pattern_sent"] is True
+    assert audit["sent_equals_transformed"] is True
+    for name in (
+        "blank-string rejection",
+        "finite numeric values",
+        "unique ids",
+        "provenance cross-field rules",
+        "epistemic/operational rules",
+        "critical missing definitions",
+        "evidence grounding against user input",
+    ):
+        assert name in audit["absent"]
+    assert all(rule.in_json_schema is False for rule in semantic_rules())
+    assert "ensure_stated_evidence.stated_number_and_source" in audit["absent_validators"]
+
+
+def test_parser_failure_file_keeps_the_structured_message_and_drops_the_secret(tmp_path: Path) -> None:
+    destination = tmp_path / "live_run_parser_response.json"
+    content = json.dumps(
+        {
+            "claims": [
+                {
+                    "claim_id": "C1",
+                    "statement": f"see {_SECRET}",
+                    "note": "Bearer super-secret-token",
+                }
+            ]
+        }
+    )
+    with pytest.raises(ValidationError) as captured:
+        ParserResult.model_validate(json.loads(content))
+    write_parser_failure(
+        destination,
+        content=content,
+        metadata={
+            "http_status": 200,
+            "finish_reason": "stop",
+            "model": "muse-spark-1.3",
+            "prompt_tokens": 10,
+            "completion_tokens": 4,
+            "reasoning_tokens": 1,
+            "total_tokens": 14,
+        },
+        validation_error=captured.value,
+        secret=_SECRET,
+    )
+    saved = destination.read_text(encoding="utf-8")
+    document = json.loads(saved)
+
+    assert _SECRET not in saved
+    assert "super-secret-token" not in saved
+    assert "Authorization" not in saved
+    assert document["metadata"]["http_status"] == 200
+    assert document["metadata"]["finish_reason"] == "stop"
+    assert document["metadata"]["reasoning_tokens"] == 1
+    assert document["metadata"]["top_level_keys"] == ["claims"]
+    assert document["content"]["claims"][0]["claim_id"] == "C1"
+    assert any(row["path"] == "claims.0.claim_id" and row["value"] == "C1" for row in document["validation_errors"])
+    with pytest.raises(ValidationError) as replayed:
+        ParserResult.model_validate(document["content"])
+    assert any(error["loc"] == ("claims", 0, "claim_id") for error in replayed.value.errors())
 
 
 def test_diagnostic_helpers_do_not_open_a_socket(monkeypatch: pytest.MonkeyPatch) -> None:

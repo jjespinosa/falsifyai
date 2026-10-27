@@ -118,10 +118,26 @@ export function App() {
       ) : null}
 
       {result?.status === "failed" ? (
-        <section className="failure">
-          <h2>Pipeline execution failed</h2>
-          <p>{result.error ?? "The pipeline stopped on a validation error."}</p>
-        </section>
+        <>
+          <section className="failure">
+            <h2>Pipeline execution failed</h2>
+          </section>
+          <details className="developer">
+            <summary>Developer</summary>
+            {result.failure ? (
+              <>
+                <p>{result.failure.stage} · {result.failure.failure_kind}</p>
+                <p>{result.failure.safe_message}</p>
+                {result.failure.validation_paths.length > 0 ? (
+                  <p>{result.failure.validation_paths.join(" · ")}</p>
+                ) : null}
+              </>
+            ) : null}
+            <p>
+              calls {result.usage.model_calls} · prompt {result.usage.prompt_tokens} · completion {result.usage.completion_tokens} · reasoning {result.usage.reasoning_tokens} · total {result.usage.total_tokens} · {result.usage.elapsed_ms} ms
+            </p>
+          </details>
+        </>
       ) : null}
 
       {result && result.status !== "failed" ? (

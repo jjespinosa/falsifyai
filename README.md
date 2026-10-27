@@ -75,17 +75,17 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
 python -m pytest
-uvicorn app.main:app --app-dir backend --env-file .env --reload
+uvicorn app.main:app --app-dir backend --env-file .env --reload --port 8010
 ```
 
-The screen, from `frontend/`:
+The screen, from `frontend/`, in its own process:
 
 ```powershell
 npm install
 npm run dev
 ```
 
-Development CORS allows `http://localhost:5173` and `http://127.0.0.1:5173` only. The Vite server proxies API calls to the backend, so the frontend does not need a key. See [docs/m5.md](docs/m5.md).
+`frontend/.env.development` sets `VITE_API_BASE_URL=http://127.0.0.1:8010`. Vite does not start or proxy the API. Do not put a key in a `VITE_` variable. Development CORS allows `http://localhost:5173` and `http://127.0.0.1:5173` only. See [docs/m5.md](docs/m5.md).
 
 `GET /health` returns the service name and milestone `M5`. It does not call the model and does not expose configuration.
 

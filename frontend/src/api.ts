@@ -1,7 +1,13 @@
 import type { ExampleCard, RunResult } from "./types";
 
+const DEFAULT_API_BASE = "http://127.0.0.1:8010";
+
 function base(): string {
-  return import.meta.env.VITE_API_BASE ?? "";
+  const configured = import.meta.env.VITE_API_BASE_URL?.trim();
+  if (!configured) {
+    return DEFAULT_API_BASE;
+  }
+  return configured.replace(/\/$/, "");
 }
 
 export async function loadExamples(): Promise<ExampleCard[]> {

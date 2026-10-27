@@ -6,9 +6,12 @@ import re
 import secrets
 import time
 from collections.abc import Callable
+from dataclasses import dataclass
+from pathlib import Path
 
 from app.config import Settings
-from app.diagnostics.parser_response import redact
+from app.diagnostics.parser_response import describe_validation_error, redact, write_parser_failure
+from app.diagnostics.run_checkpoint import ResumeRefused, ResumeSelection, write_run_checkpoint
 from app.providers.meta import ConfigurationError, LiveModelCallsDisabled, ProviderResponseError
 from app.providers.transport import ModelTransport
 from app.schemas.critic import CritiqueReport
@@ -18,6 +21,7 @@ from app.schemas.observable import ObservableDesignResult
 from app.schemas.parser import ParserResult
 from app.schemas.run import (
     RUN_ID_PATTERN,
+    FailureDiagnostic,
     RunRequest,
     RunResult,
     RunSummary,
@@ -55,12 +59,34 @@ STAGE_NAMES: tuple[StageName, ...] = (
 RunIdFactory = Callable[[], str]
 
 
+@dataclass(frozen=True)
+class RunDiagnostics:
+    """Optional development files. Production calls leave this unset."""
+
+    checkpoint_path: Path
+    parser_response_path: Path
+    secret: str
+
+
 class UsageTransport:
     """Count one live completion. It stores no headers and no reasoning text."""
 
     def __init__(self, inner: ModelTransport) -> None:
         self.inner = inner
         self.records: list[dict[str, int]] = []
+
+    @property
+    def last_body(self) -> object:
+        return getattr(self.inner, "last_body", None)
+
+    @property
+    def last_http_status(self) -> int | None:
+        return getattr(self.inner, "last_http_status", None)
+
+    @property
+    def last_usage(self) -> dict[str, int] | None:
+        usage = getattr(self.inner, "last_usage", None)
+        return usage if isinstance(usage, dict) else None
 
     def post_json(
         self,
@@ -87,9 +113,13 @@ def execute_run(
     settings: Settings,
     transport: ModelTransport | None = None,
     run_id_factory: RunIdFactory = default_run_id,
+    diagnostics: RunDiagnostics | None = None,
+    resume: ResumeSelection | None = None,
 ) -> RunResult:
     """Run the verified pipeline once. A blocked simulation does not stop the judge."""
 
+    if resume is not None:
+        request = request.model_copy(update={"hypothesis": resume.hypothesis})
     run_id = run_id_factory()
     if re.fullmatch(RUN_ID_PATTERN, run_id) is None:
         raise ValueError("run id factory produced a non-canonical id")
@@ -113,6 +143,25 @@ def execute_run(
     verdict: FalsificationVerdict | None = None
     error: str | None = None
     calls_before = 0
+    traced: dict[str, object] = {"hypothesis": request.hypothesis}
+    simulation_skipped: bool | None = None
+
+    def already_done(name: StageName) -> bool:
+        return resume is not None and STAGE_NAMES.index(name) < STAGE_NAMES.index(resume.start)
+
+    def remember(name: str | None = None, obj: object | None = None) -> None:
+        if name is not None and obj is not None:
+            traced[name] = obj
+        if diagnostics is None:
+            return
+        write_run_checkpoint(
+            diagnostics.checkpoint_path,
+            traced,  # type: ignore[arg-type]
+            secret=secret,
+            simulation_skipped=simulation_skipped,
+        )
+
+    remember()
 
     def finish_stage(name: StageName, status: StageStatus, detail: str, began: float) -> None:
         nonlocal calls_before
@@ -130,6 +179,22 @@ def execute_run(
                 record.total_tokens += item.get("total_tokens", 0)
 
     def fail(name: StageName, exc: BaseException, began: float) -> RunResult:
+        diagnostic = getattr(exc, "diagnostic", None)
+        if (
+            diagnostics is not None
+            and diagnostic is not None
+            and isinstance(getattr(diagnostic, "content", None), str)
+        ):
+            destination = diagnostics.parser_response_path
+            if name != "parser":
+                destination = destination.with_name(f"live_run_{name}_response.json")
+            write_parser_failure(
+                destination,
+                content=diagnostic.content,
+                metadata=diagnostic.metadata if isinstance(diagnostic.metadata, dict) else {},
+                validation_error=diagnostic.validation_error,
+                secret=secret,
+            )
         finish_stage(name, "failed", _public_error(exc, secret), began)
         _skip_after(stages, name)
         return _result(
@@ -145,99 +210,151 @@ def execute_run(
             experiment,
             verdict,
             error=_public_error(exc, secret),
+            failure=_failure_diagnostic(name, exc, secret),
             elapsed_ms=int((time.perf_counter() - started) * 1000),
             meter=meter,
         )
 
     began = time.perf_counter()
-    try:
-        parsed = parse_hypothesis(
-            request.hypothesis,
-            mode=request.mode,
-            settings=settings,
-            transport=live_transport,
-        )
-    except (ConfigurationError, LiveModelCallsDisabled, ProviderResponseError, Exception) as exc:
-        return fail("parser", exc, began)
-    finish_stage("parser", "success", "", began)
+    if already_done("parser"):
+        if resume is None or resume.parser is None:
+            raise ResumeRefused("resume is missing a validated parser")
+        parsed = resume.parser
+        finish_stage("parser", "success", "Resumed from a validated checkpoint.", began)
+    else:
+        try:
+            parsed = parse_hypothesis(
+                request.hypothesis,
+                mode=request.mode,
+                settings=settings,
+                transport=live_transport,
+            )
+        except (ConfigurationError, LiveModelCallsDisabled, ProviderResponseError, Exception) as exc:
+            return fail("parser", exc, began)
+        finish_stage("parser", "success", "", began)
+    remember("parser", parsed)
 
     began = time.perf_counter()
-    try:
-        critique = critique_hypothesis(
-            request.hypothesis,
-            parsed,
-            mode=request.mode,
-            settings=settings,
-            transport=live_transport,
-            reasoning_effort=stage_effort(profile, "critic"),
-        )
-    except Exception as exc:
-        return fail("critic", exc, began)
-    finish_stage("critic", "success", "", began)
+    if already_done("critic"):
+        if resume is None or resume.critique is None:
+            raise ResumeRefused("resume is missing a validated critic")
+        critique = resume.critique
+        finish_stage("critic", "success", "Resumed from a validated checkpoint.", began)
+    else:
+        try:
+            critique = critique_hypothesis(
+                request.hypothesis,
+                parsed,
+                mode=request.mode,
+                settings=settings,
+                transport=live_transport,
+                reasoning_effort=stage_effort(profile, "critic"),
+            )
+        except Exception as exc:
+            return fail("critic", exc, began)
+        finish_stage("critic", "success", "", began)
+    remember("critic", critique)
 
     began = time.perf_counter()
-    try:
-        null_model = build_null_model(
-            request.hypothesis,
-            parsed,
-            critique,
-            mode=request.mode,
-            settings=settings,
-            transport=live_transport,
-            reasoning_effort=stage_effort(profile, "null_model"),
-        )
-    except Exception as exc:
-        return fail("null_model", exc, began)
-    finish_stage("null_model", "success", "", began)
+    if already_done("null_model"):
+        if resume is None or resume.null_model is None:
+            raise ResumeRefused("resume is missing a validated null model")
+        null_model = resume.null_model
+        finish_stage("null_model", "success", "Resumed from a validated checkpoint.", began)
+    else:
+        try:
+            null_model = build_null_model(
+                request.hypothesis,
+                parsed,
+                critique,
+                mode=request.mode,
+                settings=settings,
+                transport=live_transport,
+                reasoning_effort=stage_effort(profile, "null_model"),
+            )
+        except Exception as exc:
+            return fail("null_model", exc, began)
+        finish_stage("null_model", "success", "", began)
+    remember("null_model", null_model)
 
     began = time.perf_counter()
-    try:
-        observables = design_observables(
-            request.hypothesis,
-            parsed,
-            critique,
-            null_model,
-            mode=request.mode,
-            settings=settings,
-            transport=live_transport,
-            reasoning_effort=stage_effort(profile, "observable"),
-        )
-    except Exception as exc:
-        return fail("observable", exc, began)
+    if already_done("observable"):
+        if resume is None or resume.observables is None:
+            raise ResumeRefused("resume is missing a validated observable design")
+        observables = resume.observables
+    else:
+        try:
+            observables = design_observables(
+                request.hypothesis,
+                parsed,
+                critique,
+                null_model,
+                mode=request.mode,
+                settings=settings,
+                transport=live_transport,
+                reasoning_effort=stage_effort(profile, "observable"),
+            )
+        except Exception as exc:
+            return fail("observable", exc, began)
     observable_state: StageStatus = (
         "success" if any(item.discriminating for item in observables.observables) else "blocked"
     )
     observable_detail = "" if observable_state == "success" else _first(observables.blocking_issues)
+    if already_done("observable"):
+        observable_detail = observable_detail or "Resumed from a validated checkpoint."
     finish_stage("observable", observable_state, observable_detail, began)
+    remember("observable", observables)
 
     began = time.perf_counter()
-    try:
-        simulation_plan = plan_simulation(
-            request.hypothesis,
-            parsed,
-            critique,
-            null_model,
-            observables,
-            mode=request.mode,
-            settings=settings,
-            transport=live_transport,
-            reasoning_effort=stage_effort(profile, "simulation_plan"),
-        )
-    except Exception as exc:
-        return fail("simulation_plan", exc, began)
+    if already_done("simulation_plan"):
+        if resume is None or resume.simulation_plan is None:
+            raise ResumeRefused("resume is missing a validated simulation plan")
+        simulation_plan = resume.simulation_plan
+    else:
+        try:
+            simulation_plan = plan_simulation(
+                request.hypothesis,
+                parsed,
+                critique,
+                null_model,
+                observables,
+                mode=request.mode,
+                settings=settings,
+                transport=live_transport,
+                reasoning_effort=stage_effort(profile, "simulation_plan"),
+            )
+        except Exception as exc:
+            return fail("simulation_plan", exc, began)
     plan_state: StageStatus = "success" if simulation_plan.status == "ready" else "blocked"
     plan_detail = "" if plan_state == "success" else _first(simulation_plan.blocking_missing_definitions)
+    if already_done("simulation_plan") and plan_state == "success":
+        plan_detail = "Resumed from a validated checkpoint."
     finish_stage("simulation_plan", plan_state, plan_detail, began)
+    remember("simulation_plan", simulation_plan)
 
     began = time.perf_counter()
-    if simulation_plan.status != "ready" or simulation_plan.spec is None:
+    if already_done("simulation"):
+        if resume is not None and resume.simulation is not None:
+            simulation_result = resume.simulation
+            simulation_skipped = False
+            finish_stage("simulation", "success", "Resumed from a validated checkpoint.", began)
+            remember("simulation", simulation_result)
+        else:
+            simulation_skipped = True
+            finish_stage("simulation", "skipped", "The simulation plan is blocked.", began)
+            remember()
+    elif simulation_plan.status != "ready" or simulation_plan.spec is None:
+        simulation_skipped = True
         finish_stage("simulation", "skipped", "The simulation plan is blocked.", began)
+        remember()
     else:
         try:
             simulation_result = run_simulation(simulation_plan.spec)
         except (SimulationRejected, Exception) as exc:
             return fail("simulation", exc, began)
+        simulation_skipped = False
         finish_stage("simulation", "success", "", began)
+        remember("simulation", simulation_result)
 
     began = time.perf_counter()
     try:
@@ -259,6 +376,7 @@ def execute_run(
     experiment_state: StageStatus = "blocked" if experiment.status == "blocked" else "success"
     experiment_detail = "" if experiment_state == "success" else _first(experiment.blocking_missing_definitions)
     finish_stage("experiment", experiment_state, experiment_detail, began)
+    remember("experiment", experiment)
 
     began = time.perf_counter()
     try:
@@ -280,6 +398,7 @@ def execute_run(
     except Exception as exc:
         return fail("judge", exc, began)
     finish_stage("judge", "success", verdict.status, began)
+    remember("judge", verdict)
     return _result(
         run_id,
         request,
@@ -293,6 +412,7 @@ def execute_run(
         experiment,
         verdict,
         error=error,
+        failure=None,
         elapsed_ms=int((time.perf_counter() - started) * 1000),
         meter=meter,
     )
@@ -357,6 +477,7 @@ def _result(
     verdict: FalsificationVerdict | None,
     *,
     error: str | None,
+    failure: FailureDiagnostic | None,
     elapsed_ms: int,
     meter: UsageTransport | None,
 ) -> RunResult:
@@ -387,6 +508,7 @@ def _result(
         summary=summary,
         usage=usage,
         error=error,
+        failure=failure,
     )
 
 
@@ -429,6 +551,33 @@ def _skip_after(stages: dict[StageName, StageRecord], failed: StageName) -> None
             continue
         if seen and stages[name].status == "pending":
             stages[name].status = "skipped"
+
+
+def _failure_diagnostic(stage: StageName, exc: BaseException, secret: str) -> FailureDiagnostic:
+    diagnostic = getattr(exc, "diagnostic", None)
+    kind = getattr(diagnostic, "failure_kind", None)
+    if kind in {"schema_validation", "json_decode"}:
+        paths: list[str] = []
+        validation_error = getattr(diagnostic, "validation_error", None)
+        if validation_error is not None:
+            paths = [row["path"] for row in describe_validation_error(validation_error, secret=secret)]
+        message = (
+            "Parser response did not satisfy ParserResult"
+            if stage == "parser"
+            else f"{stage} response did not satisfy its schema"
+        )
+        return FailureDiagnostic(
+            stage=stage,
+            failure_kind=kind,
+            safe_message=message,
+            validation_paths=paths,
+        )
+    return FailureDiagnostic(
+        stage=stage,
+        failure_kind="system",
+        safe_message=_public_error(exc, secret),
+        validation_paths=[],
+    )
 
 
 def _public_error(exc: BaseException, secret: str) -> str:

@@ -3,14 +3,26 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
 from app.config import Settings
+from app.diagnostics.parser_response import completion_facts
 from app.providers.meta import MetaModelProvider, ProviderResponseError
 from app.providers.schema_json import strict_json_schema
 from app.providers.transport import ModelTransport, UrllibTransport
+
+
+@dataclass(frozen=True)
+class StructuredCallFailure:
+    """Safe attachment for one rejected structured completion. It is not part of str()."""
+
+    failure_kind: str
+    content: str
+    validation_error: ValidationError | None
+    metadata: dict[str, Any]
 
 
 def complete_structured(
@@ -33,15 +45,39 @@ def complete_structured(
         schema_name=schema_name,
         reasoning_effort=reasoning_effort,
     )
+    metadata = _call_metadata(transport)
     try:
         payload = json.loads(completion.content)
     except json.JSONDecodeError:
         raise ProviderResponseError(
-            "The live model response did not match the required schema."
+            "The live model response did not match the required schema.",
+            diagnostic=StructuredCallFailure(
+                "json_decode",
+                completion.content,
+                None,
+                metadata,
+            ),
         ) from None
     try:
         return model.model_validate(payload)
-    except ValidationError:
+    except ValidationError as exc:
         raise ProviderResponseError(
-            "The live model response did not match the required schema."
+            "The live model response did not match the required schema.",
+            diagnostic=StructuredCallFailure(
+                "schema_validation",
+                completion.content,
+                exc,
+                metadata,
+            ),
         ) from None
+
+
+def _call_metadata(transport: ModelTransport | None) -> dict[str, Any]:
+    body = getattr(transport, "last_body", None) if transport is not None else None
+    facts = completion_facts(body, http_status=getattr(transport, "last_http_status", None))
+    usage = getattr(transport, "last_usage", None) if transport is not None else None
+    if facts.get("reasoning_tokens") is None and isinstance(usage, dict):
+        reasoning = usage.get("reasoning_tokens")
+        if isinstance(reasoning, int):
+            facts["reasoning_tokens"] = reasoning
+    return facts

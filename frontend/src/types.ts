@@ -114,4 +114,10 @@ export interface RunResult {
     elapsed_ms: number;
   };
   error: string | null;
+  failure: {
+    stage: string;
+    failure_kind: "schema_validation" | "json_decode" | "system";
+    safe_message: string;
+    validation_paths: string[];
+  } | null;
 }

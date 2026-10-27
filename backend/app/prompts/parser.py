@@ -31,7 +31,20 @@ For an unsupported user-proposed scientific hypothesis, use provenance "assumed"
 
 Operationality describes measurability and control.
 A speculative status does not imply non-operationality.
+
+A defined variable has a clear meaning and measurement identity.
+defined=true means the physical or mathematical quantity is sufficiently identified to know what it represents and, in principle, how it could be measured, controlled, or computed.
+defined does not mean that a numerical value, a numerical range, a tolerance, an instrument precision, or an effect size was supplied.
+A named standard physical quantity should normally be defined=true when its meaning is unambiguous from the hypothesis.
+bob mass, oscillation period, and pendulum length are defined=true when the hypothesis names them.
+An unknown biofield parameter with no operational meaning is defined=false.
+A missing numerical value or tolerance does not, by itself, make the quantity undefined.
+Do not encode missing numerical information by setting defined=false.
+Put missing quantitative information in missing_definitions. That includes an exact pendulum length, a mass scan range, a small-angle numerical threshold, a minimum period difference, a timing precision, and an H1 effect magnitude.
+A quantitatively specified variable may also carry a value, range, or tolerance when the user wrote one. defined=true does not require that quantitative specification.
+
 Set is_operational true only when the critical variables and relationships are defined well enough to connect the claim to controlled or measurable quantities.
+If any variable has defined set to false, set is_operational to false.
 If a missing definition is critical to measuring or controlling the claim, set critical to true and is_operational to false.
 An optional clarification may be listed with critical false and does not by itself make the claim non-operational.
 

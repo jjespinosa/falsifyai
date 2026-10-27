@@ -20,6 +20,7 @@ def run_route(body: RunRequest, request: Request) -> RunResult:
         body,
         settings=request.app.state.settings,
         transport=request.app.state.live_transport,
+        diagnostics=getattr(request.app.state, "run_diagnostics", None),
     )
 
 

@@ -29,7 +29,11 @@ def parse_hypothesis(
     settings: Settings,
     transport: ModelTransport | None = None,
 ) -> ParserResult:
-    """Extract claims. Live failures stay live failures."""
+    """Extract claims. Live failures stay live failures.
+
+    ``defined`` records whether a quantity is identified. A missing number
+    stays a missing definition and is not rewritten into ``defined=false``.
+    """
 
     if mode is ExecutionMode.STUB:
         result = _stub_parse(hypothesis)

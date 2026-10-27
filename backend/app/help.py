@@ -66,7 +66,10 @@ def help_document() -> HelpResponse:
             HelpEndpoint(
                 method="POST",
                 path="/api/v1/analyze/parse",
-                summary="Extract claims from a hypothesis. The default mode is stub.",
+                summary=(
+                    "Extract claims from a hypothesis. The default mode is stub. "
+                    "A defined variable names an identifiable quantity. A missing number stays a missing definition."
+                ),
             ),
             HelpEndpoint(
                 method="POST",
