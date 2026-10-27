@@ -185,8 +185,8 @@ def test_observable_goldens_discriminate_only_when_the_models_differ() -> None:
     assert mass.observables[0].predicted_difference is PredictedDifference.QUALITATIVE_DIFFERENCE
     assert blocked.observables == []
     assert blocked.blocking_issues
-    assert confounded.observables[0].discriminating is False
-    assert confounded.observables[0].required_controls
+    assert confounded.observables == []
+    assert confounded.blocking_issues
     undiscriminating = mass.observables[0].model_dump()
     undiscriminating["predicted_difference"] = PredictedDifference.ZERO.value
     with pytest.raises(ValidationError, match="different H1 and H0"):
@@ -360,8 +360,5 @@ def test_case_b_and_case_c_stub_chain() -> None:
             settings=settings,
         )
         assert null_result.models
-        if "biofield" in statement:
-            assert design.observables == []
-        else:
-            assert design.observables[0].discriminating is False
-            assert design.observables[0].required_controls
+        assert design.observables == []
+        assert design.blocking_issues

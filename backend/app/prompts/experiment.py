@@ -12,6 +12,8 @@ A meaningful experiment may still be partial if H1 lacks the quantitative defini
 
 If simulation is blocked, do not automatically block the experiment.
 
+A missing numerical control tolerance does not automatically block a scientifically meaningful experiment outline. Use status=partial when the observable and controls are identifiable but decisive sensitivity or thresholds remain undefined.
+
 Clearly state what can be tested now and what remains undefined.
 
 Return only the requested structured schema.
@@ -24,7 +26,9 @@ Use ready only when the design states a decisive measurement strategy, including
 A qualitative change such as "changes" or "depends on", with no magnitude, functional form, or minimum effect, is partial. Set required_resolution.status to undefined and value to null.
 experiment_id looks like exp1. target_claim_ids and observable_ids must already exist in the supplied results.
 capability is required, assumed, user_supplied, or unknown. Use user_supplied only for a capability written in the supplied text.
-safety_notes must include this exact item: No autonomous physical execution.
+The safety_notes array MUST contain this exact string, character-for-character:
+No autonomous physical execution
+Do not add a period, colon, prefix, suffix, quotation mark, or any other character to that array item.
 Do not provide an actionable procedure for a hazardous biological, chemical, radiological, or weapons experiment.
 Do not say that running the experiment would establish H1.
 """

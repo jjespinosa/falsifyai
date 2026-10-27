@@ -57,12 +57,16 @@ def main() -> int:
         model_id=settings.meta_model_id,
     )
     lines.append("retries: 0")
+    lines.extend(_contract_lines())
+    checkpoint_path = root / "tmp" / "live_m4_checkpoint.json"
+    stages: dict = {}
     if secret.strip() == "" or settings.meta_model_id != REQUIRED_MODEL_ID:
         lines.append("parser_http: not sent")
         return _emit(lines, secret, ok=False)
 
     hypothesis = HypothesisInput(statement=CASE_MASS)
     transport = UrllibTransport()
+    _remember(stages, checkpoint_path, "hypothesis", hypothesis, secret)
     try:
         parsed = parse_hypothesis(
             hypothesis,
@@ -73,6 +77,7 @@ def main() -> int:
     except (ConfigurationError, ProviderResponseError) as exc:
         return _stop(lines, secret, "parser", exc, transport, "critic", "null_model", "observable", "planner", "experiment", "judge")
     lines.extend(_success("parser", transport, effort="minimal"))
+    _remember(stages, checkpoint_path, "parser", parsed, secret)
 
     try:
         critique = critique_hypothesis(
@@ -86,6 +91,7 @@ def main() -> int:
     except ProviderResponseError as exc:
         return _stop(lines, secret, "critic", exc, transport, "null_model", "observable", "planner", "experiment", "judge")
     lines.extend(_success("critic", transport, effort="low"))
+    _remember(stages, checkpoint_path, "critic", critique, secret)
 
     try:
         null_result = build_null_model(
@@ -101,6 +107,7 @@ def main() -> int:
         return _stop(lines, secret, "null_model", exc, transport, "observable", "planner", "experiment", "judge")
     lines.extend(_success("null_model", transport, effort="medium"))
     lines.extend(_null_summary(null_result))
+    _remember(stages, checkpoint_path, "null", null_result, secret)
 
     try:
         design = design_observables(
@@ -117,6 +124,7 @@ def main() -> int:
         return _stop(lines, secret, "observable", exc, transport, "planner", "experiment", "judge")
     lines.extend(_success("observable", transport, effort="medium"))
     lines.extend(_observable_summary(design))
+    _remember(stages, checkpoint_path, "observable", design, secret)
 
     try:
         simulation = plan_simulation(
@@ -136,6 +144,7 @@ def main() -> int:
     lines.append(f"simulation_status: {simulation.status}")
     lines.append("spec_generated: " + ("true" if simulation.spec is not None else "false"))
     lines.append("simulate_http: not called")
+    _remember(stages, checkpoint_path, "planner", simulation, secret)
 
     try:
         experiment = design_experiment(
@@ -152,9 +161,12 @@ def main() -> int:
             reasoning_effort="medium",
         )
     except ProviderResponseError as exc:
+        lines.extend(_experiment_diagnostic(exc, transport, secret, root))
+        lines.extend(_checkpoint_lines(checkpoint_path))
         return _stop(lines, secret, "experiment", exc, transport, "judge")
     lines.extend(_success("experiment", transport, effort="medium"))
     lines.extend(_experiment_summary(experiment))
+    _remember(stages, checkpoint_path, "experiment", experiment, secret)
 
     try:
         verdict = judge_hypothesis(
@@ -173,9 +185,11 @@ def main() -> int:
             reasoning_effort="medium",
         )
     except ProviderResponseError as exc:
+        lines.extend(_checkpoint_lines(checkpoint_path))
         return _stop(lines, secret, "judge", exc, transport)
     lines.extend(_success("judge", transport, effort="medium"))
     lines.extend(_verdict_summary(verdict))
+    lines.extend(_checkpoint_lines(checkpoint_path))
     return _emit(lines, secret, ok=True)
 
 
@@ -202,6 +216,72 @@ def _verdict_summary(result: object) -> list[str]:
         "required_next_definition: " + (result.required_next_definition or "none"),
         f"delta_over_sigma: {result.delta_over_sigma}",
         "evidence_refs: " + ",".join(result.evidence_refs),
+    ]
+
+
+def _remember(stages, path, name, model, secret) -> None:
+    from app.diagnostics.m4_checkpoint import write_checkpoint
+
+    stages[name] = model
+    last = write_checkpoint(path, stages, secret=secret)
+    if last != name:
+        raise RuntimeError("checkpoint did not record the stage that just validated")
+
+
+def _contract_lines() -> list[str]:
+    from app.diagnostics.experiment_response import render_pydantic_only_rules, render_schema_comparison
+
+    return (render_schema_comparison() + "\n" + render_pydantic_only_rules()).splitlines()
+
+
+def _experiment_diagnostic(exc, transport, secret: str, root) -> list[str]:
+    import json
+
+    from app.diagnostics.experiment_response import (
+        experiment_profile,
+        message_content,
+        render_experiment_profile,
+        render_validation_errors,
+        safe_metadata,
+        write_experiment_response,
+    )
+    from app.schemas.experiment import ExperimentPlanResult
+    from pydantic import ValidationError
+
+    body = getattr(transport, "last_body", None)
+    content = message_content(body)
+    if content is None:
+        return ["experiment_raw: not retained"]
+    metadata = safe_metadata(body, http_status=getattr(transport, "last_http_status", None))
+    destination = root / "tmp" / "live_experiment_response.json"
+    write_experiment_response(destination, content, metadata, secret=secret)
+    lines = [f"experiment_response_file: {destination.name}", f"experiment_raw_chars: {len(content)}"]
+    try:
+        payload = json.loads(content)
+    except json.JSONDecodeError:
+        lines.append("experiment_content_json: failure")
+        return lines
+    lines.append("experiment_content_json: success")
+    lines.extend(render_experiment_profile(experiment_profile(payload, content)).splitlines())
+    try:
+        ExperimentPlanResult.model_validate(payload)
+    except ValidationError as validation_error:
+        lines.extend(render_validation_errors(validation_error, secret=secret).splitlines())
+    else:
+        lines.append("experiment_pydantic: success")
+        lines.append(f"experiment_domain_error: {exc}")
+    return lines
+
+
+def _checkpoint_lines(path) -> list[str]:
+    import json
+
+    if not path.is_file():
+        return ["checkpoint_written: false", "checkpoint_last_valid_stage: none"]
+    document = json.loads(path.read_text(encoding="utf-8"))
+    return [
+        "checkpoint_written: true",
+        f"checkpoint_last_valid_stage: {document.get('last_valid_stage')}",
     ]
 
 

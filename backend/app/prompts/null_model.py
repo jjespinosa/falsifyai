@@ -25,7 +25,10 @@ Use user_supplied only for equations or assumptions written by the user.
 Use standard_knowledge for a conventional relation you are not treating as a new measurement.
 Use comparison_assumption for a condition introduced so H0 and H1 can be compared.
 Do not invent measured values, instrument precision, or effect sizes.
-can_mimic_claim may be true when a conventional account can reproduce the claimed effect. That is a useful result, not a failure.
+can_mimic_claim refers to the complete null explanation including declared nuisance parameters and confounders, not only the idealized core equation.
+If the ideal equation predicts no effect but declared confounders can reproduce an apparent version of the claim, set can_mimic_claim to true and say how in mimicry_reason.
+If can_mimic_claim is false, mimicry_reason must explain why neither the core equation nor the declared confounders can reproduce the claim.
+Do not treat every listed confounder as automatically able to mimic every claim.
 Do not decide whether H1 is supported, falsified, or statistically significant.
 """
 

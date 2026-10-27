@@ -56,6 +56,7 @@ class ObservableCandidate(BaseModel):
     required_controls: list[str] = Field(default_factory=list, max_length=20)
     known_confounders: list[str] = Field(default_factory=list, max_length=20)
     blocking_missing_definitions: list[str] = Field(default_factory=list, max_length=20)
+    non_blocking_missing_definitions: list[str] = Field(default_factory=list, max_length=20)
     discriminating: bool
 
     @field_validator(
@@ -76,6 +77,7 @@ class ObservableCandidate(BaseModel):
         "required_controls",
         "known_confounders",
         "blocking_missing_definitions",
+        "non_blocking_missing_definitions",
         mode="before",
     )
     @classmethod
@@ -84,7 +86,12 @@ class ObservableCandidate(BaseModel):
             return value
         return [item.strip() if isinstance(item, str) else item for item in value]
 
-    @field_validator("required_controls", "known_confounders", "blocking_missing_definitions")
+    @field_validator(
+        "required_controls",
+        "known_confounders",
+        "blocking_missing_definitions",
+        "non_blocking_missing_definitions",
+    )
     @classmethod
     def _items_not_blank(cls, value: list[str]) -> list[str]:
         for item in value:
@@ -102,6 +109,12 @@ class ObservableCandidate(BaseModel):
             raise ValueError("a discriminating observable cannot list blocking missing definitions")
         if self.known_confounders and not self.required_controls:
             raise ValueError("known confounders need controls before the observable can discriminate")
+        return self
+
+    @model_validator(mode="after")
+    def _undefined_target_is_not_a_candidate(self) -> ObservableCandidate:
+        if self.blocking_missing_definitions:
+            raise ValueError("an undefined measurement target is not an observable candidate")
         return self
 
 

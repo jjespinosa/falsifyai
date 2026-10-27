@@ -52,7 +52,12 @@ class NullModel(BaseModel):
     equations: list[SourcedStatement] = Field(default_factory=list, max_length=10)
     free_parameters: list[str] = Field(default_factory=list, max_length=20)
     known_confounders: list[str] = Field(default_factory=list, max_length=20)
-    can_mimic_claim: bool
+    can_mimic_claim: bool = Field(
+        description=(
+            "Whether the full null explanation, including declared nuisance parameters "
+            "and known confounders, can reproduce an apparent form of the claim."
+        )
+    )
     mimicry_reason: str = Field(min_length=1, max_length=1_000)
     limitations: list[str] = Field(default_factory=list, max_length=20)
     basis: KnowledgeBasis

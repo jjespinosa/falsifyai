@@ -11,6 +11,8 @@ from app.config import load_settings
 from app.main import create_app
 from app.prompts.experiment import EXPERIMENT_SYSTEM_PROMPT
 from app.prompts.judge import JUDGE_SYSTEM_PROMPT
+from app.prompts.null_model import NULL_MODEL_SYSTEM_PROMPT
+from app.prompts.observable import OBSERVABLE_SYSTEM_PROMPT
 from app.providers.meta import ProviderResponseError
 from app.providers.schema_json import strict_json_schema, strict_subset_issues
 from app.schemas.experiment import SAFETY_NOTE, ExperimentPlan, ExperimentPlanResult
@@ -19,6 +21,8 @@ from app.schemas.identifiers import EXPERIMENT_ID_PATTERN
 from app.schemas.verdict import FalsificationVerdict
 from app.services.experiment import design_experiment
 from app.services.judge import judge_hypothesis
+from app.schemas.observable import ObservableCandidate
+from app.services.m2_fixtures import case_b_null, case_b_observable, case_c_observable, case_mass_null, case_mass_observable
 from app.services.m3_fixtures import case_mass_plan
 from app.services.m4_fixtures import (
     CASE_QUANT,
@@ -322,3 +326,75 @@ def test_live_judge_uses_medium_effort_and_does_not_fall_back() -> None:
     )
     assert refused.status_code == 422
     assert len(transport.calls) == 1
+
+
+def test_observable_existence_is_separate_from_a_numeric_tolerance() -> None:
+    identified = case_mass_observable().observables[0]
+
+    assert identified.observable_id == "o1"
+    assert identified.discriminating is True
+    assert identified.blocking_missing_definitions == []
+    assert identified.non_blocking_missing_definitions
+    assert "Do not confuse incomplete quantitative control specifications with absence of an observable." in OBSERVABLE_SYSTEM_PROMPT
+    assert "can_mimic_claim refers to the complete null explanation" in NULL_MODEL_SYSTEM_PROMPT
+    assert "Use status=partial when the observable and controls are identifiable" in EXPERIMENT_SYSTEM_PROMPT
+    payload = identified.model_dump()
+    payload["discriminating"] = False
+    payload["blocking_missing_definitions"] = ["the measured quantity has no mapping"]
+    with pytest.raises(ValidationError, match="undefined measurement target"):
+        ObservableCandidate.model_validate(payload)
+    assert case_b_observable().observables == []
+    assert case_c_observable().observables == []
+    assert case_c_observable().blocking_issues
+
+
+def test_partial_experiment_stays_short_of_testable() -> None:
+    ctx = pendulum_context()
+    experiment = _design(ctx)
+    verdict = _judge(ctx, experiment)
+
+    assert experiment.status == "partial"
+    assert experiment.experiment is not None
+    assert experiment.experiment.observable_ids == ["o1"]
+    assert experiment.experiment.required_resolution.status == "undefined"
+    assert verdict.status == "NOT_YET_FALSIFIABLE"
+    assert verdict.delta_over_sigma is None
+    from app.services import m4_fixtures
+    from app.services.fixtures import normalize_statement
+    from app.services.m2_fixtures import CASE_MASS
+
+    monkeypatch = pytest.MonkeyPatch()
+    try:
+        def forced_testable():
+            payload = quantitative_verdict().model_dump()
+            payload["evidence_refs"] = ["c1", "h0", "o1", "exp1"]
+            return FalsificationVerdict.model_validate(payload)
+
+        monkeypatch.setitem(
+            m4_fixtures.GOLDEN_VERDICTS,
+            normalize_statement(CASE_MASS),
+            forced_testable,
+        )
+        with pytest.raises(ProviderResponseError, match="defined resolution"):
+            _judge(ctx)
+    finally:
+        monkeypatch.undo()
+
+
+def test_mimicry_uses_the_full_null_explanation() -> None:
+    mass = case_mass_null().models[0]
+    undefined = case_b_null().models[0]
+
+    assert mass.can_mimic_claim is True
+    assert mass.known_confounders
+    assert "mass" in mass.equations[0].statement
+    assert undefined.can_mimic_claim is False
+    assert undefined.known_confounders == []
+    assert undefined.mimicry_reason
+
+
+def test_four_local_verdicts_remain_available() -> None:
+    assert _judge(pendulum_context()).status == "NOT_YET_FALSIFIABLE"
+    assert _judge(quantitative_context()).status == "TESTABLE"
+    assert _judge(low_sensitivity_context()).status == "BELOW_SENSITIVITY"
+    assert _judge(identical_context()).status == "NON_DISCRIMINATING"

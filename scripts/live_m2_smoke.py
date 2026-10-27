@@ -166,6 +166,7 @@ def _null_summary(result: object) -> list[str]:
         lines.append(f"h0_id: {model.model_id}")
         lines.append(f"h0_summary: {model.description}")
         lines.append(f"can_mimic_claim: {str(model.can_mimic_claim).lower()}")
+        lines.append(f"mimicry_reason: {model.mimicry_reason}")
         lines.append("confounders: " + ",".join(model.known_confounders))
         lines.append("blockers: " + ",".join(model.blocking_missing_definitions))
     if not result.models:
@@ -182,6 +183,11 @@ def _observable_summary(result: object) -> list[str]:
         "required_controls: "
         + " | ".join(
             f"{item.observable_id}:{' ; '.join(item.required_controls)}" for item in result.observables
+        ),
+        "non_blocking_missing_definitions: "
+        + " | ".join(
+            f"{item.observable_id}:{' ; '.join(item.non_blocking_missing_definitions)}"
+            for item in result.observables
         ),
         "observable_blockers: " + ",".join(result.blocking_issues),
         f"observable_summary: {result.summary}",

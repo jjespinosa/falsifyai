@@ -202,6 +202,9 @@ def case_mass_observable() -> ObservableDesignResult:
                     "distance from the pivot to the center of mass",
                 ],
                 blocking_missing_definitions=[],
+                non_blocking_missing_definitions=[
+                    "a numeric small-angle tolerance is not stated"
+                ],
                 discriminating=True,
             )
         ],
@@ -231,50 +234,11 @@ def case_b_observable() -> ObservableDesignResult:
 
 def case_c_observable() -> ObservableDesignResult:
     return ObservableDesignResult(
-        observables=[
-            ObservableCandidate(
-                observable_id="o1",
-                name="plant growth change",
-                symbol="G",
-                definition=(
-                    "A change in plant growth beside the speaker compared with growth "
-                    "away from it. The text does not yet define the growth measure."
-                ),
-                units="unspecified",
-                measurement_method=(
-                    "Compare the same growth measure over the same time window in "
-                    "matched conditions. The measure itself is not yet defined."
-                ),
-                target_claim_ids=["c1", "c2"],
-                h1_prediction="Growth beside the speaker differs because of the claimed mechanism.",
-                h0_prediction=(
-                    "Growth can differ because light, temperature, water, or airflow differ."
-                ),
-                predicted_difference=PredictedDifference.UNKNOWN,
-                required_controls=[
-                    "matched light",
-                    "matched temperature",
-                    "matched water",
-                    "matched airflow apart from the speaker",
-                    "a stated growth measure and time window",
-                ],
-                known_confounders=[
-                    "light",
-                    "temperature",
-                    "water",
-                    "airflow",
-                    "air movement from the speaker",
-                ],
-                blocking_missing_definitions=[
-                    "growth has no stated measure or time window"
-                ],
-                discriminating=False,
-            )
-        ],
+        observables=[],
         blocking_issues=["growth has no stated measure or time window"],
         summary=(
-            "A raw growth difference is not discriminating while the growth measure "
-            "is undefined and ordinary conditions are uncontrolled."
+            "No observable is returned because the growth measure itself is undefined. "
+            "Ordinary conditions are recorded on the null model and were not turned into a measurement."
         ),
     )
 
