@@ -62,9 +62,13 @@ export function visualStatus(stages: Record<string, StageStatus>, key: string): 
 }
 
 export const DUFFING_NOTICE = "Synthetic Duffing benchmark — model prediction, not experimental data.";
+export const BENCHMARK_NOTE = "Synthetic benchmark — model predictions, not experimental data.";
 export const SPECULATIVE_NOTICE = "Speculative hypothesis — not established physics.";
 export const FRONTIER_ADVERSARIAL =
-  "FalsifyAI is testing this hypothesis adversarially. It is not attempting to validate DQ-12.";
+  "FalsifyAI is testing DQ-12 adversarially. It is not attempting to validate it.";
+export const MISSING_LINK =
+  "Operational mapping from laboratory-controlled quantities to the proposed twelve-dimensional separation and from that separation to a distinct quantitative observable.";
+export const FEATURED_EXAMPLES = ["duffing", "dq12", "pendulum"] as const;
 
 export function statementFor(examples: ExampleCard[], exampleId: string): string {
   return examples.find((item) => item.example_id === exampleId)?.statement ?? "";
@@ -79,7 +83,7 @@ export function curveLabels(exampleId: string | undefined): { h0: string; h1: st
     return {
       h0: "H0 — harmonic",
       h1: "H1 — Duffing",
-      caption: DUFFING_NOTICE,
+      caption: BENCHMARK_NOTE,
     };
   }
   return {
@@ -94,6 +98,18 @@ export function maximumSeparation(delta: number[]): number | null {
     return null;
   }
   return Math.max(...delta.map((value) => Math.abs(value)));
+}
+
+export function isFeaturedExample(exampleId: string): boolean {
+  return (FEATURED_EXAMPLES as readonly string[]).includes(exampleId);
+}
+
+export function isDemoMode(search: string): boolean {
+  return new URLSearchParams(search).get("demo") === "1";
+}
+
+export function executionLabel(mode: "stub" | "live"): string {
+  return mode === "live" ? "LIVE" : "Deterministic demo";
 }
 
 export function formatQuantity(value: number): string {

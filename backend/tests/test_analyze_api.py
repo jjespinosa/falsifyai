@@ -220,8 +220,8 @@ def test_critic_live_call_defaults_reasoning_effort_to_low() -> None:
         json=_critique_body(CASE_B),
     )
 
-    assert sent.status_code == 502
-    assert transport.calls[0]["body"]["reasoning_effort"] == "high"
+    assert sent.status_code == 422
+    assert transport.calls == []
 
 
 def test_responses_and_logs_omit_the_key(caplog: pytest.LogCaptureFixture) -> None:

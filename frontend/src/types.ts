@@ -91,6 +91,7 @@ export interface RunResult {
       measured_variables: Array<{ name: string }>;
       controlled_variables: Array<{ name: string }>;
       required_resolution: { status: string; value: number | null; units: string };
+      parameter_scan?: Array<{ name: string; lower: number | null; upper: number | null; status: string }>;
       falsifier_candidate: string;
     } | null;
   } | null;

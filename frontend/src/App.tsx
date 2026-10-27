@@ -3,10 +3,16 @@ import { useEffect, useState } from "react";
 import { loadExamples, runHypothesis } from "./api";
 import { CurveChart } from "./Chart";
 import {
+  BENCHMARK_NOTE,
+  FEATURED_EXAMPLES,
   FRONTIER_ADVERSARIAL,
+  MISSING_LINK,
   curveLabels,
   exampleMatching,
+  executionLabel,
   formatQuantity,
+  isDemoMode,
+  isFeaturedExample,
   maximumSeparation,
   statementFor,
   traceIds,
@@ -17,6 +23,18 @@ import {
 } from "./presentation";
 import type { ExampleCard, RunResult } from "./types";
 
+function ExampleButton({ item, onSelect }: { item: ExampleCard; onSelect: () => void }) {
+  return (
+    <button type="button" onClick={onSelect}>
+      <span className="category">{item.category}</span>
+      {item.category === "FRONTIER STRESS TEST" ? <span className="badge speculative">SPECULATIVE</span> : null}
+      <strong>{item.title}</strong>
+      <span>{item.label}</span>
+      <span>{item.purpose}</span>
+    </button>
+  );
+}
+
 export function App() {
   const [examples, setExamples] = useState<ExampleCard[]>([]);
   const [statement, setStatement] = useState("");
@@ -25,6 +43,8 @@ export function App() {
   const [profile, setProfile] = useState<"economy" | "balanced">("economy");
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<RunResult | null>(null);
+  const [resultMode, setResultMode] = useState<"stub" | "live">("stub");
+  const demo = isDemoMode(window.location.search);
   const [transportError, setTransportError] = useState<string | null>(null);
   const [catalogError, setCatalogError] = useState<string | null>(null);
 
@@ -39,6 +59,7 @@ export function App() {
     setTransportError(null);
     setResult(null);
     try {
+      setResultMode(mode);
       setResult(await runHypothesis(statement, mode, profile));
     } catch (error) {
       setTransportError(error instanceof Error ? error.message : "Pipeline execution failed");
@@ -59,15 +80,28 @@ export function App() {
   const separation = result?.simulation_result ? maximumSeparation(result.simulation_result.delta) : null;
   const resolution = plan?.required_resolution;
   const frontier = matched?.category === "FRONTIER STRESS TEST";
+  const duffing = matched?.example_id === "duffing";
+  const featured = FEATURED_EXAMPLES.flatMap((id) => examples.filter((item) => item.example_id === id));
+  const secondary = examples.filter((item) => !isFeaturedExample(item.example_id));
+  const scan = plan?.parameter_scan?.[0];
 
   return (
-    <main className="app">
+    <main className={demo ? "app demo" : "app"}>
       <header className="masthead">
         <h1>FalsifyAI</h1>
         <p className="subtitle">Turn a scientific hypothesis into a falsifiable test.</p>
         <p className="support">
-          FalsifyAI does not ask whether your idea sounds plausible.
-          It asks what experiment could prove it wrong.
+          Most AI systems help defend an idea.
+          FalsifyAI asks what observation could prove it wrong.
+        </p>
+        <p className="flow" aria-label="Scientific pipeline">
+          <b>Hypothesis</b><span>→</span>
+          <b>Critique</b><span>→</span>
+          <b>H₀</b><span>→</span>
+          <b>Observable</b><span>→</span>
+          <b>Simulation</b><span>→</span>
+          <b>Experiment</b><span>→</span>
+          <b>Verdict</b>
         </p>
       </header>
 
@@ -83,29 +117,41 @@ export function App() {
           }}
         />
         <div className="examples">
-          {examples.map((item) => (
-            <button
+          {featured.map((item) => (
+            <ExampleButton
               key={item.example_id}
-              type="button"
-              onClick={() => {
+              item={item}
+              onSelect={() => {
                 setStatement(statementFor(examples, item.example_id));
                 setNotice(item.notice);
               }}
-            >
-              <span className="category">{item.category}</span>
-              {item.category === "FRONTIER STRESS TEST" ? <span className="badge speculative">SPECULATIVE</span> : null}
-              <strong>{item.title}</strong>
-              <span>{item.label}</span>
-              <span>{item.purpose}</span>
-            </button>
+            />
           ))}
         </div>
+        {secondary.length > 0 ? (
+          <details className="more-examples">
+            <summary>More examples</summary>
+            <div className="examples">
+              {secondary.map((item) => (
+                <ExampleButton
+                  key={item.example_id}
+                  item={item}
+                  onSelect={() => {
+                    setStatement(statementFor(examples, item.example_id));
+                    setNotice(item.notice);
+                  }}
+                />
+              ))}
+            </div>
+          </details>
+        ) : null}
         {catalogError ? <p className="notice">{catalogError}</p> : null}
         {notice ? <p className="notice">{notice}</p> : null}
         <div className="actions">
           <button className="primary" type="button" disabled={running || statement.trim() === ""} onClick={submit}>
             TRY TO FALSIFY
           </button>
+          <span className={`mode-flag ${mode === "live" ? "live" : ""}`}>{executionLabel(mode)}</span>
         </div>
         <details className="execution">
           <summary>Execution</summary>
@@ -231,7 +277,20 @@ export function App() {
                   {resolution?.status === "defined" && resolution.value !== null ? (
                     <p>Specified uncertainty: {formatQuantity(resolution.value)} {resolution.units}</p>
                   ) : null}
+                  {duffing && result.verdict?.delta_over_sigma !== null && result.verdict?.delta_over_sigma !== undefined ? (
+                    <p>delta/sigma: {formatQuantity(result.verdict.delta_over_sigma)}</p>
+                  ) : null}
                 </div>
+                {duffing ? (
+                  <div className="facts">
+                    <p>H₀ {observable?.h0_prediction}</p>
+                    <p>H₁ {observable?.h1_prediction}</p>
+                    {scan && scan.status === "defined" && scan.lower !== null && scan.upper !== null ? (
+                      <p>Range: {formatQuantity(scan.lower)} &lt;= {scan.name} &lt;= {formatQuantity(scan.upper)}</p>
+                    ) : null}
+                    <p>{BENCHMARK_NOTE}</p>
+                  </div>
+                ) : null}
               </>
             ) : (
               <>
@@ -264,7 +323,8 @@ export function App() {
           {result.verdict ? (
             <article className="verdict">
               <h2>Falsification status</h2>
-              {frontier ? <p className="badge speculative">SPECULATIVE</p> : null}
+              <p className={`mode-flag ${resultMode === "live" ? "live" : ""}`}>{executionLabel(resultMode)}</p>
+              {frontier ? <p className="badge speculative">SPECULATIVE HYPOTHESIS</p> : null}
               <p className="label">{verdictLabel(result.verdict.status)}</p>
               {frontier ? <p>{FRONTIER_ADVERSARIAL}</p> : null}
               <h2>Why</h2>
@@ -272,6 +332,7 @@ export function App() {
               {result.verdict.required_next_definition ? (
                 <div className={frontier && result.verdict.status === "NOT_YET_FALSIFIABLE" ? "missing-link" : undefined}>
                   <h2>{frontier && result.verdict.status === "NOT_YET_FALSIFIABLE" ? "KEY MISSING LINK" : "What is missing"}</h2>
+                  {frontier && result.verdict.status === "NOT_YET_FALSIFIABLE" ? <p>{MISSING_LINK}</p> : null}
                   <p>{result.verdict.required_next_definition}</p>
                 </div>
               ) : null}
@@ -314,6 +375,16 @@ export function App() {
           </details>
         </>
       ) : null}
+
+      <section className="principles">
+        <h2>WHY FALSIFYAI?</h2>
+        <ul>
+          <li>NO OBSERVABLE, NO CLAIM OF TESTABILITY</li>
+          <li>NO NULL MODEL, NO DISCRIMINATION</li>
+          <li>NO QUANTITATIVE LAW, NO INVENTED SIMULATION</li>
+          <li>NO ARBITRARY MODEL-GENERATED CODE EXECUTION</li>
+        </ul>
+      </section>
 
       <footer className="footer">
         <p>

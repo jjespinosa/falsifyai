@@ -181,13 +181,13 @@ def test_examples_and_stub_run_endpoint_hide_secrets() -> None:
     assert examples.status_code == 200
     body = examples.json()
     assert [item["example_id"] for item in body["examples"]] == [
-        "pendulum",
-        "vague_field",
-        "synthetic",
         "duffing",
         "dq12",
+        "pendulum",
+        "synthetic",
+        "vague_field",
     ]
-    assert body["examples"][2]["notice"] == SYNTHETIC_NOTICE
+    assert body["examples"][3]["notice"] == SYNTHETIC_NOTICE
     assert examples.headers["access-control-allow-origin"] == "http://localhost:5173"
     assert "*" not in examples.headers["access-control-allow-origin"]
     assert set(DEV_CORS_ORIGINS) == {

@@ -1,4 +1,4 @@
-"""Static help for milestone M6.
+"""Static help for milestone M7.
 
 This module does not read settings and does not include secret values.
 """
@@ -7,23 +7,24 @@ from app.schemas.help import HelpContract, HelpEndpoint, HelpLink, HelpResponse,
 
 _SUMMARY = (
     "FalsifyAI looks for an experiment that could falsify a hypothesis. "
-    "Milestone M6 runs that verified pipeline once from POST /api/v1/run and "
-    "shows the result in the local frontend. The same pipeline carries a fully "
-    "specified Duffing benchmark and refuses to overclaim on an under-specified "
-    "DQ-12 stress test. POST /api/v1/simulate runs a registered family locally "
-    "and does not call the model. The run and the analysis routes default to "
-    "stub mode. Live mode is explicit and does not fall back to the stub."
+    "Milestone M7 serves that verified pipeline and the judge-facing screen from "
+    "one process. The same pipeline carries a fully specified Duffing benchmark "
+    "and refuses to overclaim on an under-specified DQ-12 stress test. "
+    "POST /api/v1/simulate runs a registered family locally and does not call "
+    "the model. The run and the analysis routes default to stub mode. Live mode "
+    "is explicit, can be disabled, and does not fall back to the stub."
 )
 
 
 def help_document() -> HelpResponse:
-    """Return the M6 help document."""
+    """Return the M7 help document."""
 
     return HelpResponse(
         service="falsifyai",
-        milestone="M6",
+        milestone="M7",
         summary=_SUMMARY,
         documentation=[
+            HelpLink(kind="guide", location="docs/RELEASE_M7.md"),
             HelpLink(kind="guide", location="docs/m6.md"),
             HelpLink(kind="guide", location="docs/m5.md"),
             HelpLink(kind="guide", location="docs/m4.md"),
@@ -38,7 +39,7 @@ def help_document() -> HelpResponse:
             HelpEndpoint(
                 method="GET",
                 path="/health",
-                summary="Report that the M6 shell is running. The body does not include configuration.",
+                summary="Report that the M7 shell is running. The body does not include configuration.",
             ),
             HelpEndpoint(
                 method="GET",
@@ -214,6 +215,6 @@ def help_document() -> HelpResponse:
         not_available=[
             "database",
             "authentication",
-            "deployment",
+            "file upload",
         ],
     )

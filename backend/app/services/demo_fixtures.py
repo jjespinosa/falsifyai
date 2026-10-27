@@ -57,20 +57,30 @@ def demo_examples() -> ExampleList:
     return ExampleList(
         examples=[
             ExampleCard(
+                example_id="duffing",
+                category="SYNTHETIC CONTROL",
+                title="DUFFING CONTROL",
+                label="Synthetic quantitative control",
+                purpose="Shows quantitative end-to-end success.",
+                statement=CASE_DUFFING,
+                notice=DUFFING_NOTICE,
+            ),
+            ExampleCard(
+                example_id="dq12",
+                category="FRONTIER STRESS TEST",
+                title="DQ-12 speculative stress test",
+                label="Speculative frontier stress test",
+                purpose="Shows adversarial refusal to overclaim.",
+                statement=CASE_DQ12,
+                notice=DQ12_NOTICE,
+            ),
+            ExampleCard(
                 example_id="pendulum",
                 category="FOUNDATIONAL",
                 title="Qualitative pendulum claim",
                 label="Foundational comparison",
-                purpose="A period-versus-mass comparison whose finite falsifier is not yet defined.",
+                purpose="Shows why an apparently testable statement may still lack a finite falsifier.",
                 statement=CASE_MASS,
-            ),
-            ExampleCard(
-                example_id="vague_field",
-                category="VAGUE",
-                title="Vague frontier claim",
-                label="Vague claim",
-                purpose="A named effect that does not yet identify a measurement.",
-                statement=VAGUE_FIELD,
             ),
             ExampleCard(
                 example_id="synthetic",
@@ -82,25 +92,12 @@ def demo_examples() -> ExampleList:
                 notice=SYNTHETIC_NOTICE,
             ),
             ExampleCard(
-                example_id="duffing",
-                category="SYNTHETIC CONTROL",
-                title="DUFFING BENCHMARK",
-                label="Synthetic quantitative control",
-                purpose="A fully specified model comparison that should reach a numerical test.",
-                statement=CASE_DUFFING,
-                notice=DUFFING_NOTICE,
-            ),
-            ExampleCard(
-                example_id="dq12",
-                category="FRONTIER STRESS TEST",
-                title="DQ-12 speculative stress test",
-                label="Speculative frontier stress test",
-                purpose=(
-                    "Tests whether FalsifyAI challenges an under-specified frontier "
-                    "hypothesis instead of supporting it."
-                ),
-                statement=CASE_DQ12,
-                notice=DQ12_NOTICE,
+                example_id="vague_field",
+                category="VAGUE",
+                title="Vague frontier claim",
+                label="Vague claim",
+                purpose="A named effect that does not yet identify a measurement.",
+                statement=VAGUE_FIELD,
             ),
         ]
     )

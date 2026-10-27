@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, Request
 
+from app.demo_guard import enforce_release_limits
 from app.schemas.run import ExampleList, RunRequest, RunResult
 from app.services.demo_fixtures import demo_examples
 from app.services.run import execute_run
@@ -14,8 +15,10 @@ def run_route(body: RunRequest, request: Request) -> RunResult:
     """Execute the verified pipeline once.
 
     Stub is the default. A scientific blocker is a completed response, not an HTTP error.
+    The client cannot select a model id. Live calls use the server configuration.
     """
 
+    enforce_release_limits(request, body.mode, body.hypothesis.statement)
     return execute_run(
         body,
         settings=request.app.state.settings,

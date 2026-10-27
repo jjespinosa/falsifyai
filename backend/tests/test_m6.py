@@ -55,15 +55,15 @@ def test_demo_metadata() -> None:
     duffing = cards["duffing"]
     dq12 = cards["dq12"]
 
-    assert duffing.title == "DUFFING BENCHMARK"
+    assert duffing.title == "DUFFING CONTROL"
     assert duffing.label == "Synthetic quantitative control"
-    assert duffing.purpose == "A fully specified model comparison that should reach a numerical test."
+    assert duffing.purpose == "Shows quantitative end-to-end success."
     assert duffing.category == "SYNTHETIC CONTROL"
     assert duffing.notice == DUFFING_NOTICE
     assert duffing.statement == CASE_DUFFING
     assert dq12.title == "DQ-12 speculative stress test"
     assert dq12.label == "Speculative frontier stress test"
-    assert "under-specified frontier hypothesis" in dq12.purpose
+    assert dq12.purpose == "Shows adversarial refusal to overclaim."
     assert dq12.category == "FRONTIER STRESS TEST"
     assert dq12.notice == DQ12_NOTICE
     assert dq12.statement == CASE_DQ12
@@ -156,7 +156,7 @@ def test_frontend_warnings_do_not_claim_discovery() -> None:
         assert phrase not in text
     assert DUFFING_NOTICE in text
     assert DQ12_NOTICE in text
-    assert "FalsifyAI is testing this hypothesis adversarially." in text
+    assert "FalsifyAI is testing DQ-12 adversarially." in text
 
 
 def test_m6_smoke_script_import_does_not_call_the_network(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  BENCHMARK_NOTE,
   DUFFING_NOTICE,
   FRONTIER_ADVERSARIAL,
   SPECULATIVE_NOTICE,
+  executionLabel,
+  isDemoMode,
   VERDICT_LABELS,
   curveLabels,
   exampleMatching,
@@ -110,12 +113,17 @@ describe("presentation", () => {
     expect(curveLabels("duffing")).toEqual({
       h0: "H0 — harmonic",
       h1: "H1 — Duffing",
-      caption: DUFFING_NOTICE,
+      caption: BENCHMARK_NOTE,
     });
     expect(frontier?.category).toBe("FRONTIER STRESS TEST");
     expect(frontier?.notice).toBe(SPECULATIVE_NOTICE);
     expect(FRONTIER_ADVERSARIAL).toContain("adversarially");
     expect(FRONTIER_ADVERSARIAL).not.toContain("confirmed");
+    expect(DUFFING_NOTICE).toContain("not experimental data");
+    expect(isDemoMode("?demo=1")).toBe(true);
+    expect(isDemoMode("")).toBe(false);
+    expect(executionLabel("stub")).toBe("Deterministic demo");
+    expect(executionLabel("live")).toBe("LIVE");
     expect(maximumSeparation([0, -0.075, 0.02])).toBeCloseTo(0.075);
     expect(formatQuantity(0.01)).toBe("0.01");
   });

@@ -1,80 +1,95 @@
 # FalsifyAI
 
-FalsifyAI is an adversarial scientific AI. It does not try to prove a user's hypothesis. It looks for the strongest experiment that could falsify it.
+FalsifyAI turns scientific hypotheses into adversarial falsification workflows.
 
-This repository is a new project for the Meta Global AI Developer Hackathon 2026, Indie Developer track, theme Push the Frontier. Work presented from this repository is built during the hackathon window, October 26–November 4, 2026.
+Generative AI is good at making an idea sound plausible. Science advances by exposing an idea to a test it can fail. Structured Meta-model agents build the claim, the null model H₀, an observable, a simulation when a law is actually stated, an experiment, and one falsification status. The system is allowed to stop and say `NOT_YET_FALSIFIABLE`.
 
-## Pipeline
+## The problem
 
-The target pipeline is:
+A fluent model can defend almost any sentence. A judge still needs to see whether the sentence names a measurement, a competing explanation, and a finite way to fail.
 
-Hypothesis → Hypothesis Parser → Adversarial Critic → Null Model → Observable → Simulation → Experiment → Falsification Judge
+## The idea
 
-The implemented milestone is M6: the verified pipeline from parser through falsification judge, one synchronous run, a local result screen, and two generalization benchmarks. Later product work is not implemented.
+FalsifyAI does not argue for the user's hypothesis. It asks what observation could prove the hypothesis wrong, and it refuses to invent the missing science.
 
-## Scientific rules
+## 30-second example
 
-1. No verdict without a measurable observable.
-2. No discrimination without a null model.
-3. Never invent experimental measurements.
-4. Keep provenance distinct from epistemic status and from operationality. Provenance is measured, literature-derived, assumed, or simulated. Epistemic status is established, hypothesis, speculative, or unknown.
-5. A hypothesis may legitimately end as `NOT_YET_FALSIFIABLE`.
-6. Do not execute arbitrary model-generated Python.
-7. Simulations use validated declarative specifications and registered numerical routines. The planner returns blocked when H1 has no quantitative law.
-8. The DQ-12 stress test is a speculative adversarial case. It is not established physics.
-9. The Duffing comparison is a synthetic quantitative control, not experimental evidence.
+Select **DUFFING CONTROL**. The hypothesis already states `Omega(A) = 1`, `Omega(A) = 1 + 0.075 * A^2`, the domain `0 <= A <= 1`, and uncertainty `0.01`. The run compares the curves and can return `TESTABLE`.
 
-Rules 1, 3, 4, and 6 constrain the claim schemas. A measured claim must name an observable. A literature-derived claim must name a source. A simulated claim must name a specification id and a routine id. Established status requires one of those evidence-bearing origins. A speculative status can still be operational when the quantities are defined. There is no field for executable code. The pipeline registers four numerical families, designs an experiment, and the judge may return `NOT_YET_FALSIFIABLE`.
+Select the **DQ-12** stress test. The same pipeline finds no operational map from laboratory quantities to a twelve-dimensional separation, blocks the simulation, and can return `NOT_YET_FALSIFIABLE`.
 
-## Stack
+## Scientific pipeline
 
-- Python 3.12
-- FastAPI, Uvicorn, and Pydantic v2
-- pytest
-- React, TypeScript, and Vite for the local screen
+Hypothesis → Critique → H₀ → Observable → Simulation → Experiment → Verdict
 
-NumPy evaluates the registered families. SciPy, SymPy, and SQLite are intentionally absent.
+Each stage constrains the next one. No observable, no claim of testability. No null model, no discrimination. No quantitative law, no invented simulation. No arbitrary model-generated code.
 
-## Why two benchmarks?
+## Live benchmarks
 
-Duffing demonstrates that FalsifyAI can carry a fully specified quantitative model through simulation and experimental discrimination. The dimensionless weak-nonlinearity curves and the measurement uncertainty are written in the hypothesis, and the restricted simulator evaluates only the registered constant and quadratic families.
+### Duffing quantitative control
 
-DQ-12 demonstrates that the same system will refuse to overclaim when a frontier hypothesis lacks an operational mapping or quantitative prediction. The stress test uses one public toy statement. An unexplained residual is not treated as evidence, and the judge can return `NOT_YET_FALSIFIABLE`.
+A synthetic dimensionless oscillator. H₀ is the harmonic frequency. H₁ is the weak Duffing shift supplied in the text. The chart is a model prediction, not experimental data. On the validated stub and the M6 live canary this case reached `TESTABLE`, with a maximum separation of 0.075 against a stated uncertainty of 0.01.
 
-## Milestone M6
+### DQ-12 speculative stress test
 
-`GET /health` and `GET /help` both report milestone `M6`.
+One public toy statement. FalsifyAI tries to falsify it. Ordinary decoherence and apparatus effects are the null. The twelve-dimensional separation is not replaced by ordinary distance. An unexplained residual is not evidence. The conservative result is `NOT_YET_FALSIFIABLE`.
 
-Included:
+## Architecture
 
-- FastAPI application, `GET /health`, and `GET /help`
-- `HypothesisInput` and `ScientificClaim` schemas
-- the verified per-stage analysis routes and `POST /api/v1/simulate`
-- `POST /api/v1/run` and `GET /api/v1/examples`
-- reasoning profiles `economy` and `balanced`
-- a local React screen for one hypothesis and one result
-- environment configuration for the Meta Model API
-- a stub provider for tests and an explicit live provider
+```mermaid
+flowchart TD
+  user[User hypothesis] --> parser[Parser]
+  parser --> critic[Critic]
+  critic --> nullModel[Null Model]
+  nullModel --> observable[Observable]
+  observable --> planner[Simulation Planner]
+  planner -->|ready| simulator[Restricted Simulator]
+  planner -->|blocked| experiment[Experiment Designer]
+  simulator --> experiment
+  experiment --> judge[Falsification Judge]
 
-Not included:
+  subgraph meta[Meta Muse Spark 1.3]
+    parser
+    critic
+    nullModel
+    observable
+    planner
+    experiment
+    judge
+  end
 
-- database, authentication, and deployment
-
-## Configuration
-
-`MODEL_API_KEY` is read only from the environment. Copy `.env.example` to `.env` and set the key locally. The real key must not be committed, logged, or placed in source, tests, or this README.
-
-```text
-MODEL_API_KEY=
-META_BASE_URL=https://api.meta.ai/v1
-META_MODEL_ID=muse-spark-1.3
+  subgraph local[Local deterministic code]
+    simulator
+    validation[Pydantic validation and orchestration]
+  end
 ```
 
-`muse-spark-1.3` is the currently verified primary model. Set `META_MODEL_ID` explicitly. An empty value does not select a model.
+Muse Spark 1.3 does the structured scientific reasoning. Local code validates every payload, runs the registered simulator, orchestrates the single run, and renders the screen.
 
-`MODEL_API_KEY` is required only for live calls. Tests stay network-free by default: the default provider is `StubModelProvider`, and the pytest suite does not call the Meta Model API. `MetaModelProvider` refuses to initialize when `MODEL_API_KEY` is missing, `META_MODEL_ID` is missing, or `META_BASE_URL` is not an absolute https URL. Live structured output sets `response_format.json_schema.strict` to true. Manual canaries load the repository-root `.env` and do not override variables already set in the process. `python scripts/live_m1_smoke.py` calls the parser and the critic. `python scripts/live_m2_smoke.py` continues through the null model and the observable designer. `python scripts/live_m3_smoke.py` adds the simulation planner and does not call `/simulate` when the plan is blocked. `python scripts/local_m3_engine.py` runs the synthetic numerical fixture and does not call the model. `python scripts/live_m4_smoke.py` continues through the experiment designer and the judge, and it does not call the simulator. `python scripts/local_m4_verdicts.py` runs the four stub verdict classes and does not call the model. `python scripts/live_m5_smoke.py` is the manual live pendulum canary. `python scripts/live_m6_smoke.py duffing` and `python scripts/live_m6_smoke.py dq12` are the manual M6 canaries. Pytest does not run these scripts.
+## Meta model integration
 
-This package does not load `.env` itself. Pass it to Uvicorn when you want the server process to see it.
+Live stages call **Muse Spark 1.3** through the Meta Model API. The model id is fixed on the server. The client cannot choose it.
+
+| Profile | Parser | Critic | Later reasoning stages |
+|---|---|---|---|
+| economy | minimal | low | low |
+| balanced | minimal | low | medium |
+
+Responses are strict JSON. Pydantic accepts the payload or the stage fails. Live mode does not fall back to the stub. The key is `MODEL_API_KEY` on the server only. It is not a `VITE_` variable and it is not in the image.
+
+## Safety and scientific guardrails
+
+- No verdict without a measurable observable.
+- No discrimination without a null model.
+- No invented measurements, sources, or coefficients.
+- Simulations use a closed registry: constant, linear, quadratic, exponential decay.
+- The public demo bounds hypothesis length and request size, allows only the economy and balanced profiles, and caps live runs per client in memory.
+- `LIVE_RUNS_ENABLED=false` refuses live calls and leaves stub examples working.
+- No database, authentication, file upload, external search, or arbitrary URL from the client.
+
+## Local setup
+
+Development is two processes. The API listens on port 8010 because another service may already own 8000. Vite does not proxy it.
 
 ```powershell
 python -m venv .venv
@@ -84,17 +99,99 @@ python -m pytest
 uvicorn app.main:app --app-dir backend --env-file .env --reload --port 8010
 ```
 
-The screen, from `frontend/`, in its own process:
+From `frontend/`:
 
 ```powershell
 npm install
 npm run dev
 ```
 
-`frontend/.env.development` sets `VITE_API_BASE_URL=http://127.0.0.1:8010`. Vite does not start or proxy the API. Do not put a key in a `VITE_` variable. Development CORS allows `http://localhost:5173` and `http://127.0.0.1:5173` only. See [docs/m5.md](docs/m5.md).
+`frontend/.env.development` sets `VITE_API_BASE_URL=http://127.0.0.1:8010` for that dev server only.
 
-`GET /health` returns the service name and milestone `M6`. It does not call the model and does not expose configuration.
+Copy `.env.example` to `.env` for live calls. Required server variables:
 
-## Documentation
+```text
+MODEL_API_KEY=
+META_BASE_URL=https://api.meta.ai/v1
+META_MODEL_ID=muse-spark-1.3
+```
 
-The operator guide for the shell is [docs/m0.md](docs/m0.md). Parser and critic usage is [docs/m1.md](docs/m1.md). Null-model and observable usage is [docs/m2.md](docs/m2.md). Simulation planning and the local evaluator are [docs/m3.md](docs/m3.md). Experiment design and the judge are [docs/m4.md](docs/m4.md). The run and the local screen are [docs/m5.md](docs/m5.md). The two M6 benchmarks are [docs/m6.md](docs/m6.md). `GET /help` returns the current contract as JSON and does not echo the process environment. `GET /docs` and `GET /redoc` serve the OpenAPI reference.
+Optional demo limits: `LIVE_RUNS_ENABLED`, `MAX_HYPOTHESIS_LENGTH` (1–4000), `MAX_REQUEST_BYTES`, `LIVE_RUN_LIMIT`, `LIVE_RUN_WINDOW_SECONDS`.
+
+## Docker deployment
+
+One image, one origin, one server-side secret.
+
+```powershell
+docker build -t falsifyai:m7 .
+docker run --rm -p 8000:8000 ^
+  -e PORT=8000 ^
+  -e MODEL_API_KEY ^
+  -e META_BASE_URL=https://api.meta.ai/v1 ^
+  -e META_MODEL_ID=muse-spark-1.3 ^
+  -e LIVE_RUNS_ENABLED=true ^
+  falsifyai:m7
+```
+
+Pass the key from the environment. Do not bake `.env` into the image. The container command is `uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port ${PORT:-8000}`.
+
+Open `/` for the screen and `/health` for the process check. `/api/*` stays on the API. Refreshing the screen does not 404.
+
+## API
+
+The judge-facing call is `POST /api/v1/run`. Stub is the default. `mode` is `stub` or `live`. `reasoning_profile` is `economy` or `balanced`.
+
+```json
+{
+  "hypothesis": {
+    "statement": "Synthetic Duffing benchmark — model prediction, not experimental data. Dimensionless weakly nonlinear control on 0 <= A <= 1. H0 harmonic oscillator: Omega(A) = 1. H1 weak Duffing approximation: Omega(A) = 1 + 0.075 * A^2. Explicit benchmark measurement uncertainty sigma_Omega = 0.01 for Omega."
+  },
+  "mode": "stub",
+  "reasoning_profile": "economy"
+}
+```
+
+An abbreviated completed body:
+
+```json
+{
+  "status": "completed",
+  "verdict": { "status": "TESTABLE", "delta_over_sigma": 7.5 },
+  "simulation_result": { "simulation_id": "sim1" },
+  "experiment": { "status": "ready" }
+}
+```
+
+`GET /api/v1/examples` returns the demo cards. `GET /health` returns `status`, `service`, and `milestone` only. Interactive reference: `/docs`.
+
+## Tests
+
+The M7 backend suite is **155** tests. The normal pytest run does not call the network. The frontend presentation suite and the TypeScript production build are separate. Live Muse Spark checks are manual scripts such as `python scripts/live_m6_smoke.py duffing`, and they are not part of pytest.
+
+## Limitations
+
+The in-memory live-run cap is a demo control. It is not an account system, and a new client address can start a new window. There is no database, login, PDF ingestion, or external search. The simulator cannot accept a new equation family from the model. DQ-12 is only the public toy sentence shipped in the demo.
+
+## Hackathon provenance
+
+This repository was created during the Meta Global AI Developer Hackathon 2026. See [docs/HACKATHON_PROVENANCE.md](docs/HACKATHON_PROVENANCE.md) and [docs/RELEASE_M7.md](docs/RELEASE_M7.md).
+
+## Authors / acknowledgements
+
+Juan José Espinosa, Independent Researcher / TallerTecno.
+
+Collaborative AI assistance helped implement and review the software. That assistance is not a human team member and is not an entrant.
+
+The spoken demo is [docs/DEMO_SCRIPT_3MIN.md](docs/DEMO_SCRIPT_3MIN.md). Form copy is [docs/SUBMISSION_COPY.md](docs/SUBMISSION_COPY.md).
+
+## Screenshots
+
+Captured from the local production screen. The runs below are labeled deterministic demo.
+
+![Landing and pipeline](docs/screenshots/01-landing.png)
+
+![Duffing TESTABLE](docs/screenshots/02-duffing.png)
+
+![DQ-12 NOT YET FALSIFIABLE](docs/screenshots/03-dq12.png)
+
+![Scientific trace](docs/screenshots/04-trace.png)

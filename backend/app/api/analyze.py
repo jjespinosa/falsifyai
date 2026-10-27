@@ -4,8 +4,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, Request
 
+from app.demo_guard import PUBLIC_EFFORTS, enforce_release_limits
 from app.providers.meta import (
-    REASONING_EFFORTS,
     ConfigurationError,
     LiveModelCallsDisabled,
     ProviderResponseError,
@@ -48,6 +48,7 @@ def parse_route(
 ) -> ParserResult:
     """Extract the smallest set of claims from a hypothesis."""
 
+    enforce_release_limits(request, mode, hypothesis.statement)
     return _call(
         lambda: parse_hypothesis(
             hypothesis,
@@ -70,11 +71,8 @@ def critique_route(
 ) -> CritiqueReport:
     """Review claims already produced by the parser."""
 
-    if reasoning_effort not in REASONING_EFFORTS:
-        raise HTTPException(
-            status_code=422,
-            detail="reasoning_effort must be minimal, low, medium, high, xhigh, or max.",
-        )
+    _check_effort(reasoning_effort)
+    enforce_release_limits(request, mode, body.hypothesis.statement)
     return _call(
         lambda: critique_hypothesis(
             body.hypothesis,
@@ -100,6 +98,7 @@ def null_model_route(
     """Construct the strongest reasonable competing explanation."""
 
     _check_effort(reasoning_effort)
+    enforce_release_limits(request, mode, body.hypothesis.statement)
     return _call(
         lambda: build_null_model(
             body.hypothesis,
@@ -130,6 +129,7 @@ def observable_route(
     """Propose a quantity that might separate H1 from H0."""
 
     _check_effort(reasoning_effort)
+    enforce_release_limits(request, mode, body.hypothesis.statement)
     return _call(
         lambda: design_observables(
             body.hypothesis,
@@ -161,6 +161,7 @@ def simulation_plan_route(
     """Decide whether H0 and H1 are quantitative enough to simulate."""
 
     _check_effort(reasoning_effort)
+    enforce_release_limits(request, mode, body.hypothesis.statement)
     return _call(
         lambda: plan_simulation(
             body.hypothesis,
@@ -193,6 +194,7 @@ def experiment_route(
     """Design a comparison. Partial is a meaningful and incomplete design."""
 
     _check_effort(reasoning_effort)
+    enforce_release_limits(request, mode, body.hypothesis.statement)
     return _call(
         lambda: design_experiment(
             body.hypothesis,
@@ -223,6 +225,7 @@ def judge_route(
     """Assign one falsification status for the supplied scientific state."""
 
     _check_effort(reasoning_effort)
+    enforce_release_limits(request, mode, body.hypothesis.statement)
     return _call(
         lambda: judge_hypothesis(
             body.hypothesis,
@@ -243,10 +246,10 @@ def judge_route(
 
 
 def _check_effort(reasoning_effort: str) -> None:
-    if reasoning_effort not in REASONING_EFFORTS:
+    if reasoning_effort not in PUBLIC_EFFORTS:
         raise HTTPException(
             status_code=422,
-            detail="reasoning_effort must be minimal, low, medium, high, xhigh, or max.",
+            detail="reasoning_effort must be minimal, low, or medium.",
         )
 
 

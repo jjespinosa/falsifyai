@@ -39,8 +39,31 @@ button, textarea { font: inherit; color: inherit; }
   font-size: 1.7rem;
 }
 
-.subtitle { margin: 0.4rem 0 0; font-size: 1.25rem; }
-.support { max-width: 40rem; color: var(--muted); }
+.subtitle { margin: 0.45rem 0 0; font-size: 1.45rem; max-width: 36rem; }
+.support { max-width: 38rem; color: var(--muted); font-size: 1.05rem; }
+.flow { display: flex; flex-wrap: wrap; gap: 0.35rem 0.45rem; align-items: center; margin: 1.2rem 0 0; }
+.flow b {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+.flow span { color: var(--accent); }
+.principles { margin-top: 1.4rem; }
+.principles h2 { margin: 0 0 0.6rem; letter-spacing: 0.08em; font-size: 0.95rem; }
+.principles ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.45rem; }
+.principles li { border-left: 3px solid var(--accent); padding: 0.35rem 0.7rem; letter-spacing: 0.03em; }
+.mode-flag { display: inline-block; margin-left: 0.6rem; border: 1px solid var(--line); border-radius: 999px; padding: 0.15rem 0.55rem; letter-spacing: 0.08em; font-size: 0.75rem; }
+.mode-flag.live { border-color: var(--success); color: var(--success); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.6rem; margin-top: 0.8rem; }
+.facts p { margin: 0.2rem 0; }
+.more-examples { margin-top: 0.7rem; color: var(--muted); }
+.app.demo .developer { display: none; }
+.app.demo .verdict .label { font-size: 3.4rem; }
+.app.demo .chart svg { min-height: 320px; }
+.app.demo .support, .app.demo .principles, .app.demo .more-examples { display: none; }
 
 .composer, .panel, .verdict, .failure {
   background: var(--panel);
