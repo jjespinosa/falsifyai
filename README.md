@@ -210,12 +210,12 @@ The spoken demo is [docs/DEMO_SCRIPT_3MIN.md](docs/DEMO_SCRIPT_3MIN.md). Form co
 
 ## Screenshots
 
-Captured from the local production screen. The runs below are labeled deterministic demo.
+Captured from the public deployment. The runs below are labeled deterministic demo.
 
-![Landing and pipeline](docs/screenshots/01-landing.png)
+![Landing and pipeline](docs/screenshots/landing.png)
 
-![Duffing TESTABLE](docs/screenshots/02-duffing.png)
+![Duffing TESTABLE](docs/screenshots/duffing-testable.png)
 
-![DQ-12 NOT YET FALSIFIABLE](docs/screenshots/03-dq12.png)
+![DQ-12 NOT YET FALSIFIABLE](docs/screenshots/dq12-not-yet-falsifiable.png)
 
-![Scientific trace](docs/screenshots/04-trace.png)
+![Scientific trace](docs/screenshots/scientific-trace.png)
