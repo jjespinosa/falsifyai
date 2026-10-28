@@ -11,7 +11,6 @@ from app.api.analyze import router as analyze_router
 from app.api.run import router as run_router
 from app.api.simulate import router as simulate_router
 from app.config import Settings, load_settings
-from app.meta_diagnostics import log_meta_runtime_diagnostics
 from app.demo_guard import BoundedBodyMiddleware, LiveQuota
 from app.help import help_document
 from app.providers.base import ModelProvider
@@ -36,8 +35,6 @@ def create_app(
     """
 
     resolved = load_settings() if settings is None else settings
-    if resolved.meta_runtime_diagnostics:
-        _log_runtime_diagnostics(resolved, from_process=settings is None)
     app = FastAPI(
         title="FalsifyAI",
         version=__version__,
@@ -100,24 +97,6 @@ def create_app(
     app.include_router(run_router)
     mount_spa(app, _static_directory(static_dir))
     return app
-
-
-def _log_runtime_diagnostics(resolved: Settings, *, from_process: bool) -> None:
-    """Read the raw process values when the app is loading its own environment."""
-
-    if from_process:
-        api_key = os.environ.get("MODEL_API_KEY", "")
-        meta_base_url = os.environ.get("META_BASE_URL", resolved.meta_base_url)
-        meta_model_id = os.environ.get("META_MODEL_ID", "")
-    else:
-        api_key = resolved.model_api_key.get_secret_value()
-        meta_base_url = resolved.meta_base_url
-        meta_model_id = resolved.meta_model_id
-    log_meta_runtime_diagnostics(
-        api_key=api_key,
-        meta_base_url=meta_base_url,
-        meta_model_id=meta_model_id,
-    )
 
 
 def _static_directory(explicit: Path | None) -> Path | None:
