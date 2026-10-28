@@ -118,6 +118,9 @@ button.primary:disabled { opacity: 0.5; }
 }
 
 .examples button strong { display: block; }
+.examples button .card-label,
+.examples button .card-purpose { display: block; }
+.examples button .card-purpose { margin-top: 0.35rem; }
 .examples button span, .notice { color: var(--muted); font-size: 0.92rem; }
 
 .execution { margin-top: 0.8rem; color: var(--muted); }

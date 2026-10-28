@@ -2,6 +2,12 @@
 
 Executable Scientific Falsification Engine.
 
+Compile a scientific hypothesis into an executable falsification test.
+
+Public demo: https://falsifyai.onrender.com
+
+Public deterministic demonstration.
+
 FalsifyAI compiles scientific hypotheses into structured falsification workflows.
 
 Generative AI is excellent at making ideas sound plausible. Scientific reasoning also requires identifying how an idea can fail.
@@ -28,7 +34,7 @@ Select the **DQ-12** stress test. The same pipeline finds no operational map fro
 
 Hypothesis → Critique → H₀ → Observable → Simulation → Experiment → Verdict
 
-Each stage constrains the next one. No observable, no claim of testability. No null model, no discrimination. No quantitative law, no invented simulation. No arbitrary model-generated code.
+Each stage constrains the next one. No observable, no claim of testability. No null model, no discrimination. No quantitative law, no invented simulation. No arbitrary model-generated code. Fail closed: if the model provider, structured contract, or scientific prerequisite fails, downstream stages are skipped rather than fabricated.
 
 ## Live benchmarks
 
@@ -187,6 +193,8 @@ The M7 backend suite is **155** tests. The normal pytest run does not call the n
 ## Limitations
 
 The in-memory live-run cap is a demo control. It is not an account system, and a new client address can start a new window. There is no database, login, PDF ingestion, or external search. The simulator cannot accept a new equation family from the model. DQ-12 is only the public toy sentence shipped in the demo.
+
+The Muse Spark 1.3 pipeline was validated end-to-end locally during the hackathon. Public live inference is temporarily disabled on the Render deployment after Meta returned an empty model catalog for the same authenticated API credential from that hosting environment. A support case is open with Meta. FalsifyAI fails closed and never silently substitutes deterministic output for a failed live request. The public site at https://falsifyai.onrender.com runs with `LIVE_RUNS_ENABLED=false`. Deterministic demos continue to run. A live request fails explicitly.
 
 ## Hackathon provenance
 

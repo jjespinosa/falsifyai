@@ -1,10 +1,10 @@
 # Demo script
 
-Target spoken length: about 2 minutes 50 seconds. Do not aim for exactly 3:00.
+Target spoken length: about 2 minutes 50 seconds. Stay inside 2:45–2:55. Do not aim for exactly 3:00.
 
-Record against the public URL. Use `?demo=1` if you want the developer token panel hidden and the verdict larger. That parameter does not change the scientific result.
+Record the public deterministic demonstration at https://falsifyai.onrender.com. Use `?demo=1` if you want the developer token panel hidden and the verdict larger. That parameter does not change the scientific result.
 
-If the run is stub, the screen says **Deterministic demo**. If the run calls Muse Spark, the screen says **LIVE**. Do not present a stub run as a live model call.
+The screen says **Deterministic demo**. Do not present that recording as a live model call.
 
 Related projects stay in the README. They are not part of this recording.
 

@@ -29,8 +29,8 @@ function ExampleButton({ item, onSelect }: { item: ExampleCard; onSelect: () => 
       <span className="category">{item.category}</span>
       {item.category === "FRONTIER STRESS TEST" ? <span className="badge speculative">SPECULATIVE</span> : null}
       <strong>{item.title}</strong>
-      <span>{item.label}</span>
-      <span>{item.purpose}</span>
+      <span className="card-label">{item.label}</span>
+      <span className="card-purpose">{item.purpose}</span>
     </button>
   );
 }
@@ -384,6 +384,10 @@ export function App() {
           <li><span>NO OBSERVABLE</span><span>NO CLAIM OF TESTABILITY</span></li>
           <li><span>NO QUANTITATIVE LAW</span><span>NO INVENTED SIMULATION</span></li>
           <li><span>NO ARBITRARY MODEL-GENERATED CODE EXECUTION</span></li>
+          <li>
+            <span>FAIL CLOSED</span>
+            <span>If the model provider, structured contract, or scientific prerequisite fails, downstream stages are skipped rather than fabricated.</span>
+          </li>
         </ul>
       </section>
 
