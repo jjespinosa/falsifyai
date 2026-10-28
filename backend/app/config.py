@@ -27,6 +27,7 @@ class Settings(BaseModel):
     meta_base_url: str = DEFAULT_META_BASE_URL
     meta_model_id: str = ""
     live_runs_enabled: bool = True
+    meta_runtime_diagnostics: bool = False
     max_hypothesis_length: int = 4_000
     max_request_bytes: int = 65_536
     live_run_limit: int = 4
@@ -68,6 +69,20 @@ class Settings(BaseModel):
         if token in {"0", "false", "no", "off"}:
             return False
         raise ValueError("LIVE_RUNS_ENABLED must be true or false")
+
+    @field_validator("meta_runtime_diagnostics", mode="before")
+    @classmethod
+    def _diagnostics_flag(cls, value: object) -> bool:
+        if isinstance(value, bool):
+            return value
+        if not isinstance(value, str):
+            raise ValueError("META_RUNTIME_DIAGNOSTICS must be true or false")
+        token = value.strip().lower()
+        if token in {"1", "true", "yes", "on"}:
+            return True
+        if token in {"0", "false", "no", "off"}:
+            return False
+        raise ValueError("META_RUNTIME_DIAGNOSTICS must be true or false")
 
     @field_validator("max_hypothesis_length")
     @classmethod
@@ -133,6 +148,8 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
     }
     if "LIVE_RUNS_ENABLED" in source:
         payload["live_runs_enabled"] = source["LIVE_RUNS_ENABLED"]
+    if "META_RUNTIME_DIAGNOSTICS" in source and source["META_RUNTIME_DIAGNOSTICS"].strip() != "":
+        payload["meta_runtime_diagnostics"] = source["META_RUNTIME_DIAGNOSTICS"]
     for name, field in (
         ("MAX_HYPOTHESIS_LENGTH", "max_hypothesis_length"),
         ("MAX_REQUEST_BYTES", "max_request_bytes"),
